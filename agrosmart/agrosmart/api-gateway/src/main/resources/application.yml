@@ -1,0 +1,77 @@
+# ============================================================
+# api-gateway - Configuración
+# ============================================================
+# Punto de entrada con TLS/SSL. El keystore se monta como
+# volumen desde /certs/keystore.p12 (configurado en docker-compose)
+# ============================================================
+
+server:                                              # configuracion del servidor web del gateway
+  port: ${SERVER_PORT:8443}                          # puerto de escucha; usa SERVER_PORT o 8443 por defecto (HTTPS)
+  # ---------- TLS/SSL ----------
+  ssl:                                               # configuracion del cifrado HTTPS
+    enabled: true                                    # activa TLS/SSL en el gateway
+    key-store: file:/app/certs/keystore.p12          # ruta al keystore con el certificado del servidor
+    key-store-password: ${SSL_KEYSTORE_PASSWORD:changeit}  # contrasena del keystore; viene de variable de entorno
+    key-store-type: PKCS12                           # formato del keystore (PKCS12)
+    key-alias: agrosmart                             # alias del certificado dentro del keystore
+
+spring:                                              # configuracion general de Spring
+  application:                                       # datos de la aplicacion
+    name: api-gateway                                # nombre logico del servicio
+
+  # ---------- Spring Cloud Gateway: rutas a microservicios ----------
+  cloud:                                             # configuracion de Spring Cloud
+    gateway:                                         # configuracion del Spring Cloud Gateway
+      routes:                                        # lista de rutas hacia los microservicios internos
+        # auth-service (login, registro) - SIN validación JWT
+        - id: auth-route                             # identificador unico de la ruta de autenticacion
+          uri: ${AUTH_SERVICE_URL:http://auth-service:8081}  # destino interno del auth-service
+          predicates:                                # condiciones que debe cumplir la peticion para usar esta ruta
+            - Path=/api/auth/**                      # aplica a rutas que empiezan con /api/auth/
+          filters:                                   # filtros que se aplican antes de reenviar
+            - StripPrefix=1   # /api/auth/login → /auth/login
+
+        # sensor-service - CON validación JWT
+        - id: sensor-route                           # identificador unico de la ruta de sensores
+          uri: ${SENSOR_SERVICE_URL:http://sensor-service:8082}  # destino interno del sensor-service
+          predicates:                                # condiciones de coincidencia de la ruta
+            - Path=/api/sensores/**                  # aplica a rutas que empiezan con /api/sensores/
+          filters:                                   # filtros aplicados a esta ruta
+            - StripPrefix=1                          # elimina el primer segmento (/api) antes de reenviar
+
+        # alert-service - CON validación JWT
+        - id: alert-route                            # identificador unico de la ruta de alertas
+          uri: ${ALERT_SERVICE_URL:http://alert-service:8083}  # destino interno del alert-service
+          predicates:                                # condiciones de coincidencia de la ruta
+            - Path=/api/alertas/**                   # aplica a rutas que empiezan con /api/alertas/
+          filters:                                   # filtros aplicados a esta ruta
+            - StripPrefix=1                          # elimina el primer segmento (/api) antes de reenviar
+
+      # CORS para que el frontend pueda llamar al gateway
+      globalcors:                                    # configuracion global de CORS
+        cors-configurations:                         # mapa de configuraciones CORS por patron de ruta
+          '[/**]':                                   # aplica a todas las rutas
+            allowedOrigins: "*"                      # permite peticiones desde cualquier origen
+            allowedMethods: [GET, POST, PUT, DELETE, OPTIONS]  # metodos HTTP permitidos
+            allowedHeaders: "*"                      # permite cualquier cabecera en la peticion
+            maxAge: 3600                             # tiempo (segundos) que el navegador cachea el preflight
+
+# ---------- JWT (validación) ----------
+jwt:                                                 # configuracion del token JWT
+  secret: ${JWT_SECRET}                              # clave secreta para validar el token (misma que firma el auth-service)
+
+# ---------- Actuator ----------
+management:                                          # configuracion de Actuator (monitoreo)
+  endpoints:                                         # endpoints de gestion expuestos
+    web:                                             # exposicion via web
+      exposure:                                      # control de que endpoints se publican
+        include: health,info,gateway                 # expone salud, info y datos del gateway
+  endpoint:                                          # configuracion de endpoints individuales
+    health:                                          # endpoint de salud
+      show-details: never                            # nunca muestra detalles internos en el healthcheck
+
+logging:                                             # configuracion de niveles de log
+  level:                                             # niveles por paquete
+    root: INFO                                       # nivel general de la aplicacion
+    com.agrosmart: DEBUG                             # nivel detallado para el codigo propio del proyecto
+    org.springframework.cloud.gateway: INFO          # nivel para los logs del Spring Cloud Gateway

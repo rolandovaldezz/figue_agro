@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Archivo POM (Project Object Model) de Maven: define como se construye este microservicio, sus dependencias y plugins -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <!-- Version del modelo POM que entiende Maven (siempre 4.0.0 en Maven actual) -->
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Proyecto padre: heredamos de Spring Boot la gestion de versiones y configuracion por defecto -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+        <relativePath/>
+    </parent>
+
+    <!-- Identidad de este artefacto: grupo, nombre, version y descripcion del microservicio -->
+    <groupId>com.agrosmart</groupId>
+    <artifactId>alert-service</artifactId>
+    <version>1.0.0</version>
+    <name>alert-service</name>
+    <description>Microservicio de alertas: consume MQTT y aplica reglas</description>
+
+    <!-- Propiedades reutilizables: version de Java usada para compilar y ejecutar -->
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
+    <!-- Lista de dependencias (librerias) que necesita compilar y ejecutar el servicio -->
+    <dependencies>
+        <!-- API REST con Spring MVC: expone endpoints HTTP y levanta el servidor web embebido -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Persistencia JPA/Hibernate: guarda en la base de datos las alertas generadas -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- Validaciones: valida los datos de entrada de las peticiones con anotaciones -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- Actuator: expone /actuator/health que Docker consulta para saber si el contenedor esta vivo -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Driver MariaDB: conector JDBC para comunicarse con la base de datos -->
+        <dependency>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+        </dependency>
+
+        <!-- MQTT (subscriber) -->
+        <!-- Integra MQTT en Spring para suscribirse al broker Mosquitto y recibir las lecturas -->
+        <dependency>
+            <groupId>org.springframework.integration</groupId>
+            <artifactId>spring-integration-mqtt</artifactId>
+        </dependency>
+        <!-- Cliente MQTT Eclipse Paho (lo usamos directamente) -->
+        <!-- Libreria cliente MQTT de bajo nivel usada para conectarse y leer mensajes del broker -->
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+            <version>1.2.5</version>
+        </dependency>
+
+        <!-- Tests: herramientas de pruebas (JUnit, Mockito, etc.); solo en fase de test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <!-- Configuracion de la construccion del proyecto -->
+    <build>
+        <plugins>
+            <!-- Plugin de Spring Boot: empaqueta la aplicacion en un JAR ejecutable autocontenido -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

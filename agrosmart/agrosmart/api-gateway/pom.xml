@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Archivo POM (Project Object Model) de Maven: define como se construye el API Gateway, sus dependencias y plugins -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <!-- Version del modelo POM que entiende Maven (siempre 4.0.0 en Maven actual) -->
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Proyecto padre: heredamos de Spring Boot la gestion de versiones y configuracion por defecto -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+        <relativePath/>
+    </parent>
+
+    <!-- Identidad de este artefacto: grupo, nombre, version y descripcion del componente -->
+    <groupId>com.agrosmart</groupId>
+    <artifactId>api-gateway</artifactId>
+    <version>1.0.0</version>
+    <name>api-gateway</name>
+    <description>API Gateway con TLS y validación JWT</description>
+
+    <!-- Propiedades reutilizables: version de Java, version de Spring Cloud y version de la libreria JWT (jjwt) -->
+    <properties>
+        <java.version>17</java.version>
+        <spring-cloud.version>2023.0.1</spring-cloud.version>
+        <jjwt.version>0.12.5</jjwt.version>
+    </properties>
+
+    <!-- Gestion de dependencias: importa el BOM de Spring Cloud para alinear automaticamente sus versiones -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- BOM (lista de versiones compatibles) de Spring Cloud; no agrega librerias, solo fija versiones -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- Lista de dependencias (librerias) que necesita compilar y ejecutar el gateway -->
+    <dependencies>
+        <!-- Spring Cloud Gateway (basado en WebFlux/reactive) -->
+        <!-- Enruta y reenvia las peticiones hacia los microservicios internos; es el punto de entrada unico -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+        </dependency>
+
+        <!-- Security (validación JWT en filtro de gateway) -->
+        <!-- Marco de seguridad para verificar los tokens JWT antes de dejar pasar las peticiones -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- Actuator -->
+        <!-- Expone /actuator/health que Docker consulta para saber si el contenedor esta vivo -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- JWT (jjwt) - para validar tokens -->
+        <!-- jjwt-api: interfaz para leer y validar los tokens JWT que emite auth-service -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <!-- jjwt-impl: implementacion interna de JWT, solo necesaria en tiempo de ejecucion -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- jjwt-jackson: serializa/deserializa el contenido del token a JSON con Jackson (solo en ejecucion) -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Tests -->
+        <!-- Herramientas para pruebas unitarias y de integracion (JUnit, Mockito, etc.); solo en fase de test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <!-- Configuracion de la construccion del proyecto -->
+    <build>
+        <plugins>
+            <!-- Plugin de Spring Boot: empaqueta la aplicacion en un JAR ejecutable autocontenido -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

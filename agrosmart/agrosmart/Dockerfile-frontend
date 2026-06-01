@@ -1,0 +1,21 @@
+# ============================================================
+# frontend - Dockerfile
+# ============================================================
+# Servidor estático con NGINX. Sirve los archivos HTML/JS/CSS
+# que cargan Bootstrap desde CDN y consumen el API Gateway.
+# ============================================================
+
+FROM nginx:1.27-alpine
+
+# Quitamos el contenido por defecto de NGINX
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copiamos nuestros archivos estáticos
+COPY . /usr/share/nginx/html/
+
+# Quitamos archivos que no deben servirse
+RUN rm -f /usr/share/nginx/html/Dockerfile /usr/share/nginx/html/.dockerignore
+
+EXPOSE 80
+
+# NGINX corre como entrypoint por defecto

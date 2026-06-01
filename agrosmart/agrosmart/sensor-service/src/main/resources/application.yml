@@ -1,0 +1,60 @@
+# ============================================================
+# sensor-service - Configuración
+# ============================================================
+
+server:                                              # configuracion del servidor web del servicio
+  port: ${SERVER_PORT:8082}                          # puerto de escucha; usa SERVER_PORT o 8082 por defecto
+
+spring:                                              # configuracion general de Spring
+  application:                                       # datos de la aplicacion
+    name: sensor-service                             # nombre logico del servicio de sensores
+
+  # ---------- Conexión a MariaDB (failover master-master) ----------
+  # 'sequential' = se conecta al primer nodo disponible (DB_HOST_1) y, si
+  # cae, salta automáticamente al segundo (DB_HOST_2). Como ambos nodos son
+  # master, cualquiera acepta lecturas y escrituras → si apagas una PC, el
+  # programa sigue funcionando completo contra la otra.
+  datasource:                                        # configuracion de la conexion a la base de datos
+    url: jdbc:mariadb:sequential://${DB_HOST_1}:${DB_PORT},${DB_HOST_2}:${DB_PORT}/${DB_NAME}?useUnicode=true&characterEncoding=UTF-8  # URL con failover secuencial entre los dos nodos master
+    username: ${DB_USER}                             # usuario de la base de datos (desde variable de entorno)
+    password: ${DB_PASSWORD}                         # contrasena de la base de datos (desde variable de entorno)
+    driver-class-name: org.mariadb.jdbc.Driver       # driver JDBC de MariaDB
+    hikari:                                          # configuracion del pool de conexiones HikariCP
+      maximum-pool-size: 10                          # numero maximo de conexiones simultaneas en el pool
+      minimum-idle: 2                                # numero minimo de conexiones inactivas mantenidas listas
+      connection-timeout: 10000                      # tiempo maximo (ms) de espera para obtener una conexion
+
+  # ---------- Hibernate ----------
+  jpa:                                               # configuracion de JPA / Hibernate
+    database-platform: org.hibernate.dialect.MariaDBDialect  # dialecto SQL especifico de MariaDB
+    hibernate:                                       # opciones de Hibernate
+      ddl-auto: none   # no valida/crea tablas; las crea init.sql en la nube
+    show-sql: false                                  # no imprime las sentencias SQL en consola
+
+# ---------- MQTT ----------
+mqtt:                                                # configuracion de la conexion MQTT
+  broker-url: ${MQTT_BROKER_URL:tcp://localhost:1883}  # URL del broker MQTT; usa la variable o localhost:1883
+  client-id: ${MQTT_CLIENT_ID:sensor-service}        # identificador del cliente MQTT de este servicio
+  # Topic raíz para publicación/suscripción
+  topic-base: agrosmart                              # prefijo base de los topics MQTT del proyecto
+  qos: 1                                             # calidad de servicio 1 (entrega al menos una vez)
+
+# ---------- Simulador de sensores ----------
+simulator:                                           # configuracion del simulador de lecturas de sensores
+  enabled: true                                      # activa el simulador (genera datos de prueba)
+  interval-ms: ${SIMULATOR_INTERVAL_MS:5000}         # intervalo entre lecturas simuladas; 5000 ms por defecto
+
+# ---------- Actuator ----------
+management:                                          # configuracion de Actuator (monitoreo)
+  endpoints:                                         # endpoints de gestion expuestos
+    web:                                             # exposicion via web
+      exposure:                                      # control de que endpoints se publican
+        include: health,info                         # expone solo salud e info
+  endpoint:                                          # configuracion de endpoints individuales
+    health:                                          # endpoint de salud
+      show-details: never                            # nunca muestra detalles internos en el healthcheck
+
+logging:                                             # configuracion de niveles de log
+  level:                                             # niveles por paquete
+    root: INFO                                       # nivel general de la aplicacion
+    com.agrosmart: DEBUG                             # nivel detallado para el codigo propio del proyecto

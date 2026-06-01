@@ -1,0 +1,99 @@
+/* ============================================================
+ * AgroSmart - Estilos propios (complementan a Bootstrap)
+ * ============================================================ */
+
+/* Define variables de color reutilizables en toda la hoja (paleta de la marca) */
+:root {
+  --agro-green: #2e7d32;       /* Verde principal de AgroSmart */
+  --agro-green-dark: #1b5e20;  /* Verde mas oscuro para variantes */
+  --agro-bg: #f4f7f4;          /* Color de fondo general de la pagina */
+}
+
+/* Estilos del cuerpo: fondo claro y altura minima de toda la ventana */
+body {
+  background-color: var(--agro-bg); /* Aplica el color de fondo definido arriba */
+  min-height: 100vh;                /* Ocupa al menos el 100% del alto de la pantalla */
+}
+
+/* ---------- Login ---------- */
+/* Envoltorio del login: centra la tarjeta vertical y horizontalmente con fondo degradado verde */
+.login-wrapper {
+  min-height: 100vh;        /* Ocupa todo el alto de la pantalla */
+  display: flex;            /* Activa flexbox para poder centrar */
+  align-items: center;      /* Centra verticalmente */
+  justify-content: center;  /* Centra horizontalmente */
+  background: linear-gradient(135deg, #2e7d32 0%, #66bb6a 100%); /* Fondo con degradado de verdes */
+}
+/* Tarjeta del login: ancho limitado, esquinas redondeadas y sombra */
+.login-card {
+  width: 100%;                              /* Ocupa el ancho disponible... */
+  max-width: 400px;                         /* ...pero sin pasar de 400px */
+  border: none;                             /* Sin borde */
+  border-radius: 1rem;                      /* Esquinas redondeadas */
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, .2); /* Sombra suave alrededor */
+}
+
+/* ---------- Navbar ---------- */
+/* Pone en negrita el nombre de la marca en la barra de navegacion */
+.navbar-brand { font-weight: 700; }
+/* Pinta la barra de navegacion con el verde de la marca (!important fuerza el color sobre Bootstrap) */
+.navbar-agro { background-color: var(--agro-green) !important; }
+
+/* ---------- Tarjetas de sensores ---------- */
+/* Tarjeta de sensor: barra de color a la izquierda y animacion suave al pasar el mouse */
+.sensor-card { border-left: 5px solid #ccc; transition: transform .15s ease; }
+/* Efecto al pasar el mouse: la tarjeta sube ligeramente */
+.sensor-card:hover { transform: translateY(-3px); }
+/* Borde izquierdo verde cuando el sensor esta en estado normal */
+.sensor-card.estado-ok      { border-left-color: #2e7d32; }
+/* Borde izquierdo amarillo cuando el sensor esta en estado de alerta */
+.sensor-card.estado-alerta  { border-left-color: #f9a825; }
+/* Borde izquierdo rojo cuando el sensor esta en estado critico */
+.sensor-card.estado-critico { border-left-color: #c62828; }
+/* Estilo del valor grande de la lectura del sensor (numero principal) */
+.sensor-value { font-size: 2.2rem; font-weight: 700; line-height: 1; }
+/* Estilo de la unidad de medida al lado del valor (mas pequena y gris) */
+.sensor-unit  { font-size: 1rem; color: #6c757d; }
+
+/* Tarjetas de estadisticas del dashboard: sin borde y con esquinas redondeadas */
+.stat-card { border: none; border-radius: .75rem; }
+/* Numero grande dentro de las tarjetas de estadisticas */
+.stat-number { font-size: 2rem; font-weight: 700; }
+
+/* ---------- Badges de severidad ---------- */
+/* Color azul para la etiqueta de severidad BAJA */
+.sev-BAJA    { background-color: #0d6efd; }
+/* Color naranja para la etiqueta de severidad MEDIA */
+.sev-MEDIA   { background-color: #fd7e14; }
+/* Color rojo para la etiqueta de severidad ALTA */
+.sev-ALTA    { background-color: #dc3545; }
+/* Color morado para la etiqueta de severidad CRITICA */
+.sev-CRITICA { background-color: #6f42c1; }
+
+/* Cambia el cursor a una mano para indicar que un elemento es clickeable */
+.cursor-pointer { cursor: pointer; }
+
+/* Indicador "en vivo" */
+/* Punto verde del indicador "en vivo" con una animacion que lo hace pulsar */
+.live-dot {
+  display: inline-block; width: 9px; height: 9px; /* Punto pequeno en linea con el texto */
+  background: #2e7d32; border-radius: 50%;         /* Verde y circular */
+  margin-right: 4px; animation: pulse 1.5s infinite; /* Separacion y animacion de pulso en bucle */
+}
+/* Animacion "pulse": crea un halo que crece y se desvanece alrededor del punto */
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(46, 125, 50, .6); }  /* Inicio: halo pegado y visible */
+  70%  { box-shadow: 0 0 0 8px rgba(46, 125, 50, 0); } /* A mitad: halo expandido y transparente */
+  100% { box-shadow: 0 0 0 0 rgba(46, 125, 50, 0); }   /* Fin: vuelve al inicio para repetir */
+}
+
+/* Estilo de la cinta superior de modo DEMO (barra naranja de aviso) */
+.demo-ribbon {
+  background: #ff3d00; color: #fff; font-size: .75rem; font-weight: 600; /* Naranja con texto blanco en negrita */
+  text-align: center; padding: 2px 0; letter-spacing: .5px;              /* Centrado, con relleno y letras espaciadas */
+}
+
+/* Por defecto las vistas (login/app) estan ocultas */
+.view { display: none; }
+/* La vista que tenga la clase "active" se muestra (asi se alterna entre login y app) */
+.view.active { display: block; }

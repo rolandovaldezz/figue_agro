@@ -1,0 +1,332 @@
+<!-- Declara que el documento usa HTML5 -->
+<!DOCTYPE html>
+<!-- Etiqueta raiz de la pagina; lang="es" indica que el contenido esta en espanol -->
+<html lang="es">
+<!-- Cabecera: metadatos y enlaces a hojas de estilo (no se muestra en pantalla) -->
+<head>
+    <!-- Define la codificacion de caracteres UTF-8 para mostrar acentos y simbolos -->
+    <meta charset="UTF-8">
+    <!-- Hace que la pagina sea responsive y se vea bien en celulares -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Titulo que aparece en la pestana del navegador -->
+    <title>AgroSmart — Monitoreo de Invernaderos</title>
+    <!-- Carga el framework CSS Bootstrap desde un CDN para los estilos base -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Carga la libreria de iconos de Bootstrap (los simbolos como termometro, campana, etc.) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Carga nuestra hoja de estilos propia que complementa a Bootstrap -->
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<!-- Cuerpo: todo lo que el usuario ve en pantalla -->
+<body>
+
+    <!-- Cinta de modo DEMO (se oculta si DEMO_MODE = false) -->
+    <!-- Barra de aviso que indica que se estan usando datos simulados; arranca oculta con la clase d-none -->
+    <div id="demoRibbon" class="demo-ribbon d-none">
+        MODO DEMO — datos simulados. Cambia <code>DEMO_MODE</code> a <code>false</code> en <code>config.js</code> para conectar con tu nube.
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  VISTA: LOGIN                                                -->
+    <!-- ============================================================ -->
+    <!-- Contenedor de la pantalla de inicio de sesion; la clase active la hace visible al inicio -->
+    <div id="view-login" class="view active">
+        <!-- Envoltorio que centra la tarjeta de login en la pantalla -->
+        <div class="login-wrapper">
+            <!-- Tarjeta blanca que agrupa el formulario de login -->
+            <div class="card login-card">
+                <!-- Cuerpo de la tarjeta con relleno (padding) interno -->
+                <div class="card-body p-4 p-md-5">
+                    <!-- Bloque de encabezado centrado con el nombre y descripcion de la app -->
+                    <div class="text-center mb-4">
+                        <!-- Titulo principal con el nombre del sistema -->
+                        <h1 class="h3 mb-1">🌱 AgroSmart</h1>
+                        <!-- Subtitulo que describe brevemente para que sirve la app -->
+                        <p class="text-muted small mb-0">Monitoreo Inteligente para Invernaderos</p>
+                    </div>
+
+                    <!-- Caja roja donde se muestra el mensaje de error si el login falla; arranca oculta -->
+                    <div id="loginError" class="alert alert-danger d-none" role="alert"></div>
+
+                    <!-- Formulario de inicio de sesion; el JavaScript escucha su envio -->
+                    <form id="loginForm">
+                        <!-- Grupo del campo Usuario con margen inferior -->
+                        <div class="mb-3">
+                            <!-- Etiqueta del campo de usuario -->
+                            <label for="username" class="form-label">Usuario</label>
+                            <!-- Grupo que junta el icono con el campo de texto -->
+                            <div class="input-group">
+                                <!-- Icono de persona a la izquierda del campo -->
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <!-- Campo de texto para el usuario; viene precargado con "admin" para la demo -->
+                                <input type="text" class="form-control" id="username" value="admin" required autocomplete="username">
+                            </div>
+                        </div>
+                        <!-- Grupo del campo Contrasena con margen inferior mayor -->
+                        <div class="mb-4">
+                            <!-- Etiqueta del campo de contrasena -->
+                            <label for="password" class="form-label">Contraseña</label>
+                            <!-- Grupo que junta el icono con el campo de contrasena -->
+                            <div class="input-group">
+                                <!-- Icono de candado a la izquierda del campo -->
+                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                <!-- Campo de contrasena (oculta los caracteres); precargado con "admin123" para la demo -->
+                                <input type="password" class="form-control" id="password" value="admin123" required autocomplete="current-password">
+                            </div>
+                        </div>
+                        <!-- Boton que envia el formulario para iniciar sesion -->
+                        <button type="submit" class="btn btn-success w-100" id="loginBtn">
+                            <!-- Rueda giratoria de carga que se muestra mientras se valida el login; arranca oculta -->
+                            <span class="spinner-border spinner-border-sm d-none" id="loginSpinner"></span>
+                            Ingresar
+                        </button>
+                    </form>
+
+                    <!-- Texto de ayuda que recuerda las credenciales de la demo -->
+                    <p class="text-center text-muted small mt-3 mb-0">
+                        Demo: <code>admin</code> / <code>admin123</code>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  VISTA: APLICACIÓN (después del login)                       -->
+    <!-- ============================================================ -->
+    <!-- Contenedor de la app principal; se muestra solo despues de iniciar sesion -->
+    <div id="view-app" class="view">
+
+        <!-- Navbar -->
+        <!-- Barra de navegacion superior (oscura, verde) que aparece en todas las secciones -->
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-agro">
+            <!-- Contenedor fluido que ocupa todo el ancho de la barra -->
+            <div class="container-fluid">
+                <!-- Logo/marca de la app que enlaza al dashboard -->
+                <a class="navbar-brand" href="#dashboard">🌱 AgroSmart</a>
+                <!-- Boton hamburguesa que despliega el menu en pantallas pequenas -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                    <!-- Icono de las tres lineas del boton hamburguesa -->
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <!-- Bloque colapsable que contiene los enlaces del menu y el usuario -->
+                <div class="collapse navbar-collapse" id="navMenu">
+                    <!-- Lista de enlaces de navegacion alineados a la izquierda -->
+                    <ul class="navbar-nav me-auto">
+                        <!-- Enlace a la seccion Dashboard; data-nav lo identifica para el router en JS -->
+                        <li class="nav-item"><a class="nav-link" href="#dashboard" data-nav="dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+                        <!-- Enlace a la seccion Sensores -->
+                        <li class="nav-item"><a class="nav-link" href="#sensores" data-nav="sensores"><i class="bi bi-thermometer-half"></i> Sensores</a></li>
+                        <!-- Enlace a la seccion Alertas; el badge rojo muestra el numero de alertas activas -->
+                        <li class="nav-item"><a class="nav-link" href="#alertas" data-nav="alertas"><i class="bi bi-bell"></i> Alertas <span id="navAlertCount" class="badge bg-danger d-none">0</span></a></li>
+                    </ul>
+                    <!-- Menu desplegable del usuario alineado a la derecha -->
+                    <div class="dropdown">
+                        <!-- Enlace que abre el menu del usuario; muestra el nombre del usuario logueado -->
+                        <a class="nav-link dropdown-toggle text-white" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> <span id="navUser">usuario</span>
+                        </a>
+                        <!-- Contenido del menu desplegable del usuario -->
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <!-- Linea informativa que muestra el rol del usuario -->
+                            <li><span class="dropdown-item-text small text-muted">Rol: <span id="navRol"></span></span></li>
+                            <!-- Linea divisoria dentro del menu -->
+                            <li><hr class="dropdown-divider"></li>
+                            <!-- Opcion para cerrar sesion; el JavaScript escucha su clic -->
+                            <li><a class="dropdown-item" href="#" id="logoutBtn"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Contenedor principal donde se cargan las distintas secciones de la app -->
+        <div class="container-fluid py-4 px-md-4">
+
+            <!-- ---------- DASHBOARD ---------- -->
+            <!-- Seccion del Dashboard (tablero principal con resumen en vivo) -->
+            <section id="page-dashboard" class="page">
+                <!-- Encabezado de la seccion con el titulo y el indicador "en vivo" -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <!-- Titulo de la seccion -->
+                    <h2 class="h4 mb-0">Dashboard</h2>
+                    <!-- Indicador "en vivo": el punto pulsante y la hora de la ultima actualizacion -->
+                    <span class="text-muted small"><span class="live-dot"></span>En vivo — actualizado <span id="lastUpdate">—</span></span>
+                </div>
+
+                <!-- Fila de tarjetas con las estadisticas generales (resumen rapido) -->
+                <div class="row g-3 mb-4">
+                    <!-- Columna de la tarjeta "Sensores activos" -->
+                    <div class="col-6 col-lg-3">
+                        <!-- Tarjeta verde con el conteo de sensores activos -->
+                        <div class="card stat-card bg-success text-white">
+                            <div class="card-body">
+                                <!-- Numero que el JavaScript actualiza con el total de sensores activos -->
+                                <div class="stat-number" id="statSensores">0</div>
+                                <div>Sensores activos</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Columna de la tarjeta "Alertas activas" -->
+                    <div class="col-6 col-lg-3">
+                        <!-- Tarjeta roja con el conteo de alertas activas -->
+                        <div class="card stat-card bg-danger text-white">
+                            <div class="card-body">
+                                <!-- Numero que el JavaScript actualiza con el total de alertas activas -->
+                                <div class="stat-number" id="statAlertas">0</div>
+                                <div>Alertas activas</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Columna de la tarjeta "Fuera de rango" -->
+                    <div class="col-6 col-lg-3">
+                        <!-- Tarjeta amarilla con el conteo de sensores fuera del rango esperado -->
+                        <div class="card stat-card bg-warning text-dark">
+                            <div class="card-body">
+                                <!-- Numero que el JavaScript actualiza con los sensores fuera de rango -->
+                                <div class="stat-number" id="statFueraRango">0</div>
+                                <div>Fuera de rango</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Columna de la tarjeta "Zonas monitoreadas" -->
+                    <div class="col-6 col-lg-3">
+                        <!-- Tarjeta azul con el conteo de zonas distintas que se monitorean -->
+                        <div class="card stat-card bg-primary text-white">
+                            <div class="card-body">
+                                <!-- Numero que el JavaScript actualiza con el total de zonas -->
+                                <div class="stat-number" id="statZonas">0</div>
+                                <div>Zonas monitoreadas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subtitulo que introduce la cuadricula de lecturas actuales -->
+                <h3 class="h6 text-muted text-uppercase mb-3">Lecturas actuales</h3>
+                <!-- Contenedor donde el JavaScript inserta una tarjeta por cada sensor con su lectura -->
+                <div class="row g-3" id="sensorCards">
+                    <!-- Rueda de carga que se muestra mientras llegan los datos de los sensores -->
+                    <div class="col-12 text-center text-muted py-5"><div class="spinner-border"></div></div>
+                </div>
+            </section>
+
+            <!-- ---------- SENSORES ---------- -->
+            <!-- Seccion de Sensores; arranca oculta con display:none y se muestra al navegar a ella -->
+            <section id="page-sensores" class="page" style="display:none">
+                <!-- Titulo de la seccion de sensores -->
+                <h2 class="h4 mb-3">Sensores</h2>
+                <!-- Tarjeta que contiene la tabla de sensores -->
+                <div class="card mb-4">
+                    <!-- Envoltorio que permite desplazar la tabla horizontalmente en pantallas chicas -->
+                    <div class="table-responsive">
+                        <!-- Tabla con la lista de todos los sensores -->
+                        <table class="table table-hover align-middle mb-0">
+                            <!-- Encabezado de la tabla con los nombres de las columnas -->
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th><th>Nombre</th><th>Tipo</th><th>Zona</th>
+                                    <th>Unidad</th><th>Rango esperado</th><th>Último valor</th><th>Estado</th><th></th>
+                                </tr>
+                            </thead>
+                            <!-- Cuerpo de la tabla donde el JavaScript inserta una fila por sensor -->
+                            <tbody id="sensoresTable">
+                                <!-- Fila con rueda de carga mientras llegan los datos -->
+                                <tr><td colspan="9" class="text-center text-muted py-4"><div class="spinner-border"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Panel del historial de un sensor con su grafica; arranca oculto con d-none -->
+                <div id="sensorDetail" class="card d-none">
+                    <!-- Encabezado del panel con el titulo y el boton de cerrar -->
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <!-- Titulo del panel que el JavaScript cambia con el nombre del sensor elegido -->
+                        <span id="detailTitle" class="fw-semibold">Historial del sensor</span>
+                        <!-- Boton "X" que cierra el panel de historial -->
+                        <button class="btn-close" id="detailClose"></button>
+                    </div>
+                    <!-- Cuerpo del panel que contiene la grafica -->
+                    <div class="card-body">
+                        <!-- Lienzo (canvas) donde Chart.js dibuja la grafica del historial -->
+                        <canvas id="historyChart" height="90"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ---------- ALERTAS ---------- -->
+            <!-- Seccion de Alertas; arranca oculta y se muestra al navegar a ella -->
+            <section id="page-alertas" class="page" style="display:none">
+                <!-- Encabezado de la seccion con el titulo y el filtro de alertas -->
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <!-- Titulo de la seccion de alertas -->
+                    <h2 class="h4 mb-0">Alertas</h2>
+                    <!-- Grupo de botones para filtrar entre alertas activas o todas -->
+                    <div class="btn-group btn-group-sm" role="group">
+                        <!-- Opcion de radio "Activas"; viene marcada por defecto -->
+                        <input type="radio" class="btn-check" name="alertFilter" id="filterActivas" checked>
+                        <!-- Boton visible asociado al filtro "Activas" -->
+                        <label class="btn btn-outline-danger" for="filterActivas">Activas</label>
+                        <!-- Opcion de radio "Todas" -->
+                        <input type="radio" class="btn-check" name="alertFilter" id="filterTodas">
+                        <!-- Boton visible asociado al filtro "Todas" -->
+                        <label class="btn btn-outline-secondary" for="filterTodas">Todas</label>
+                    </div>
+                </div>
+
+                <!-- Tarjeta que contiene la tabla de alertas -->
+                <div class="card">
+                    <!-- Envoltorio que permite desplazar la tabla en pantallas chicas -->
+                    <div class="table-responsive">
+                        <!-- Tabla con la lista de alertas -->
+                        <table class="table table-hover align-middle mb-0">
+                            <!-- Encabezado de la tabla con los nombres de las columnas -->
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th><th>Severidad</th><th>Mensaje</th><th>Valor</th>
+                                    <th>Fecha</th><th>Estado</th><th></th>
+                                </tr>
+                            </thead>
+                            <!-- Cuerpo de la tabla donde el JavaScript inserta una fila por alerta -->
+                            <tbody id="alertasTable">
+                                <!-- Fila con rueda de carga mientras llegan los datos -->
+                                <tr><td colspan="7" class="text-center text-muted py-4"><div class="spinner-border"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Toast de notificaciones -->
+    <!-- Contenedor fijo (abajo a la derecha) para los avisos emergentes tipo "toast" -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <!-- Aviso emergente que el JavaScript muestra con mensajes como "Sesion cerrada" o "Alerta resuelta" -->
+        <div id="toast" class="toast align-items-center text-white bg-dark border-0" role="alert">
+            <div class="d-flex">
+                <!-- Cuerpo del aviso donde el JavaScript escribe el texto del mensaje -->
+                <div class="toast-body" id="toastBody"></div>
+                <!-- Boton para cerrar manualmente el aviso -->
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Carga el JavaScript de Bootstrap (necesario para menus, toasts, dropdowns) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Carga la libreria Chart.js para dibujar las graficas del historial -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <!-- Carga la configuracion (URL del gateway y modo DEMO); debe ir antes que los demas scripts propios -->
+    <script src="config.js"></script>
+    <!-- Carga el backend simulado que se usa cuando el modo DEMO esta activo -->
+    <script src="js/mock.js"></script>
+    <!-- Carga la capa de acceso al API (hace las peticiones al backend o al mock) -->
+    <script src="js/api.js"></script>
+    <!-- Carga la logica de la interfaz; va al final para que el HTML ya exista cuando se ejecute -->
+    <script src="js/app.js"></script>
+</body>
+</html>

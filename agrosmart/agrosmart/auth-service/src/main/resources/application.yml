@@ -1,0 +1,63 @@
+# ============================================================
+# auth-service - Configuración
+# ============================================================
+# Todos los valores sensibles vienen de variables de entorno,
+# que el docker-compose inyecta desde el archivo .env
+# ============================================================
+
+server:                                              # configuracion del servidor web del servicio
+  port: ${SERVER_PORT:8081}                          # puerto de escucha; usa SERVER_PORT o 8081 por defecto
+
+spring:                                              # configuracion general de Spring
+  application:                                       # datos de la aplicacion
+    name: auth-service                               # nombre logico del servicio de autenticacion
+
+  # ---------- Conexión a MariaDB (failover master-master) ----------
+  # 'sequential' = se conecta al primer nodo disponible (DB_HOST_1) y, si
+  # cae, salta automáticamente al segundo (DB_HOST_2). Ambos son master, así
+  # que cualquiera acepta lecturas y escrituras → tolera apagar una PC.
+  datasource:                                        # configuracion de la conexion a la base de datos
+    url: jdbc:mariadb:sequential://${DB_HOST_1}:${DB_PORT},${DB_HOST_2}:${DB_PORT}/${DB_NAME}?useUnicode=true&characterEncoding=UTF-8  # URL con failover secuencial entre los dos nodos master
+    username: ${DB_USER}                             # usuario de la base de datos (desde variable de entorno)
+    password: ${DB_PASSWORD}                         # contrasena de la base de datos (desde variable de entorno)
+    driver-class-name: org.mariadb.jdbc.Driver       # driver JDBC de MariaDB
+    hikari:                                          # configuracion del pool de conexiones HikariCP
+      maximum-pool-size: 10                          # numero maximo de conexiones simultaneas en el pool
+      minimum-idle: 2                                # numero minimo de conexiones inactivas mantenidas listas
+      connection-timeout: 10000                      # tiempo maximo (ms) de espera para obtener una conexion
+
+  # ---------- Hibernate / JPA ----------
+  jpa:                                               # configuracion de JPA / Hibernate
+    database-platform: org.hibernate.dialect.MariaDBDialect  # dialecto SQL especifico de MariaDB
+    hibernate:                                       # opciones de Hibernate
+      # 'none' = no toca ni valida las tablas (las crea init.sql en la nube).
+      # Evita el típico fallo de arranque por tinyint(1) vs boolean de MariaDB.
+      ddl-auto: none                                 # no crea ni valida tablas al arrancar
+    show-sql: false                                  # no imprime las sentencias SQL en consola
+    properties:                                      # propiedades adicionales de Hibernate
+      hibernate:                                     # ajustes especificos de Hibernate
+        format_sql: true                             # formatea el SQL para que sea legible (cuando se muestra)
+        jdbc:                                        # opciones de la capa JDBC
+          time_zone: UTC                             # usa UTC como zona horaria para fechas y horas
+
+# ---------- JWT ----------
+jwt:                                                 # configuracion del token JWT
+  secret: ${JWT_SECRET}                              # clave secreta con la que este servicio FIRMA los tokens
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000}        # duracion del token en ms; 3600000 = 1 hora por defecto
+
+# ---------- Actuator (healthcheck Docker) ----------
+management:                                          # configuracion de Actuator (monitoreo)
+  endpoints:                                         # endpoints de gestion expuestos
+    web:                                             # exposicion via web
+      exposure:                                      # control de que endpoints se publican
+        include: health,info                         # expone solo salud e info
+  endpoint:                                          # configuracion de endpoints individuales
+    health:                                          # endpoint de salud
+      show-details: never                            # nunca muestra detalles internos en el healthcheck
+
+# ---------- Logging ----------
+logging:                                             # configuracion de niveles de log
+  level:                                             # niveles por paquete
+    root: INFO                                       # nivel general de la aplicacion
+    com.agrosmart: DEBUG                             # nivel detallado para el codigo propio del proyecto
+    org.hibernate.SQL: WARN                          # reduce los logs SQL de Hibernate a solo advertencias

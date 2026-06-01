@@ -1,0 +1,41 @@
+# ============================================================
+# auth-service - Dockerfile (multi-stage)
+# ============================================================
+# Stage 1: compila el JAR con Maven
+# Stage 2: empaqueta el JAR sobre una imagen ligera con solo JRE
+# Imagen final: ~180 MB (vs ~500 MB si incluyéramos Maven)
+# ============================================================
+
+# ---------- Stage 1: BUILD ----------
+FROM maven:3.9-eclipse-temurin-17-alpine AS build
+WORKDIR /build
+
+# Primero copiamos solo el pom.xml para que Docker cachee las
+# dependencias (no se vuelven a bajar si solo cambió el código)
+COPY pom.xml ./
+RUN mvn dependency:go-offline -B
+
+# Ahora sí copiamos el código fuente y compilamos
+COPY src ./src
+RUN mvn clean package -DskipTests -B
+
+
+# ---------- Stage 2: RUNTIME ----------
+FROM eclipse-temurin:17-jre-alpine
+
+# Crear usuario sin privilegios (buena práctica de seguridad)
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
+WORKDIR /app
+
+# Copiamos solo el JAR ya compilado desde el stage de build
+COPY --from=build /build/target/*.jar app.jar
+
+EXPOSE 8081
+
+# Healthcheck opcional: pide al actuator si está vivo
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD wget -qO- http://localhost:8081/actuator/health || exit 1
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

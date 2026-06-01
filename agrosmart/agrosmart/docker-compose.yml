@@ -1,0 +1,192 @@
+# ============================================================
+# AgroSmart - Orquestación de contenedores
+# ============================================================
+# Cada microservicio corre en su propio contenedor con su propio
+# Dockerfile. La base de datos NO se levanta aquí porque vive
+# en la nube privada (Rocky Linux) ya implementada.
+#
+# Para arrancar todo:    docker compose up -d --build
+# Para detener:          docker compose down
+# Para ver logs:         docker compose logs -f <nombre-servicio>
+# ============================================================
+
+# Seccion 'services': define cada contenedor que compone el sistema
+services:
+
+  # ----------------------------------------------------------
+  # Broker MQTT - mensajería entre sensor-service y alert-service
+  # ----------------------------------------------------------
+  mosquitto:
+    # Imagen oficial de Eclipse Mosquitto (no se compila, se descarga)
+    image: eclipse-mosquitto:2.0
+    # Nombre fijo del contenedor para identificarlo facilmente
+    container_name: agrosmart-mosquitto
+    # Reinicia el contenedor automaticamente salvo que se detenga a mano
+    restart: unless-stopped
+    # Publica puertos del contenedor hacia el host
+    ports:
+      - "1883:1883"   # MQTT
+      - "9001:9001"   # WebSockets (opcional)
+    # Volumenes: monta la configuracion (solo lectura) y persiste datos y logs
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    # Conecta el contenedor a la red privada del proyecto
+    networks:
+      - agrosmart-net
+
+  # ----------------------------------------------------------
+  # Microservicio de autenticación (JWT)
+  # ----------------------------------------------------------
+  auth-service:
+    # Construye la imagen a partir del Dockerfile de la carpeta indicada
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: agrosmart-auth
+    restart: unless-stopped
+    # Variables de entorno: puerto y datos de conexion (se inyectan desde el archivo .env)
+    environment:
+      SERVER_PORT: 8081
+      DB_HOST_1:   ${DB_HOST_1}
+      DB_HOST_2:   ${DB_HOST_2}
+      DB_PORT:     ${DB_PORT}
+      DB_NAME:     ${DB_NAME}
+      DB_USER:     ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET:  ${JWT_SECRET}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
+    # 'expose' abre el puerto solo dentro de la red interna (no al host)
+    expose:
+      - "8081"
+    networks:
+      - agrosmart-net
+
+  # ----------------------------------------------------------
+  # Microservicio de sensores (simula + publica MQTT + persiste)
+  # ----------------------------------------------------------
+  sensor-service:
+    # Construye la imagen desde el Dockerfile de sensor-service
+    build:
+      context: ./sensor-service
+      dockerfile: Dockerfile
+    container_name: agrosmart-sensor
+    restart: unless-stopped
+    # Variables de entorno: conexion a base de datos y configuracion del broker MQTT
+    environment:
+      SERVER_PORT: 8082
+      DB_HOST_1:   ${DB_HOST_1}
+      DB_HOST_2:   ${DB_HOST_2}
+      DB_PORT:     ${DB_PORT}
+      DB_NAME:     ${DB_NAME}
+      DB_USER:     ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      MQTT_BROKER_URL: tcp://mosquitto:1883
+      MQTT_CLIENT_ID:  sensor-service
+      SIMULATOR_INTERVAL_MS: 5000     # cada 5s publica una lectura
+    expose:
+      - "8082"
+    # Arranca despues de Mosquitto porque necesita el broker para publicar
+    depends_on:
+      - mosquitto
+    networks:
+      - agrosmart-net
+
+  # ----------------------------------------------------------
+  # Microservicio de alertas (consume MQTT + evalúa reglas)
+  # ----------------------------------------------------------
+  alert-service:
+    # Construye la imagen desde el Dockerfile de alert-service
+    build:
+      context: ./alert-service
+      dockerfile: Dockerfile
+    container_name: agrosmart-alert
+    restart: unless-stopped
+    # Variables de entorno: conexion a base de datos y suscripcion al broker MQTT
+    environment:
+      SERVER_PORT: 8083
+      DB_HOST_1:   ${DB_HOST_1}
+      DB_HOST_2:   ${DB_HOST_2}
+      DB_PORT:     ${DB_PORT}
+      DB_NAME:     ${DB_NAME}
+      DB_USER:     ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      MQTT_BROKER_URL: tcp://mosquitto:1883
+      MQTT_CLIENT_ID:  alert-service
+    expose:
+      - "8083"
+    # Arranca despues de Mosquitto porque se suscribe al broker
+    depends_on:
+      - mosquitto
+    networks:
+      - agrosmart-net
+
+  # ----------------------------------------------------------
+  # API Gateway - punto de entrada único (TLS + validación JWT)
+  # ----------------------------------------------------------
+  api-gateway:
+    # Construye la imagen desde el Dockerfile del gateway
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: agrosmart-gateway
+    restart: unless-stopped
+    # Variables de entorno: puerto HTTPS, secreto JWT y URLs internas de cada microservicio
+    environment:
+      SERVER_PORT: 8443
+      JWT_SECRET:  ${JWT_SECRET}
+      AUTH_SERVICE_URL:   http://auth-service:8081
+      SENSOR_SERVICE_URL: http://sensor-service:8082
+      ALERT_SERVICE_URL:  http://alert-service:8083
+      SSL_KEYSTORE_PASSWORD: ${SSL_KEYSTORE_PASSWORD}
+    # Unico puerto publicado al exterior: la entrada HTTPS del sistema
+    ports:
+      - "8443:8443"   # HTTPS expuesto al exterior
+    # Monta los certificados TLS del host como solo lectura
+    volumes:
+      - ./certs:/app/certs:ro
+    # Espera a que los microservicios internos esten levantados antes de arrancar
+    depends_on:
+      - auth-service
+      - sensor-service
+      - alert-service
+    networks:
+      - agrosmart-net
+
+  # ----------------------------------------------------------
+  # Frontend web (HTML + JS + Bootstrap, servido por NGINX)
+  # ----------------------------------------------------------
+  frontend:
+    # Construye la imagen desde el Dockerfile del frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agrosmart-frontend
+    restart: unless-stopped
+    # Publica el sitio web: puerto 8080 del host -> puerto 80 de NGINX
+    ports:
+      - "8080:80"
+    # Arranca despues del gateway, que es a quien consume el frontend
+    depends_on:
+      - api-gateway
+    networks:
+      - agrosmart-net
+
+
+# ============================================================
+# Volúmenes persistentes (solo para Mosquitto)
+# ============================================================
+# Guardan los datos del broker aunque el contenedor se recree
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+
+
+# ============================================================
+# Red interna - solo accesible entre contenedores
+# ============================================================
+# Red privada tipo bridge: los contenedores se ven entre si por su nombre
+networks:
+  agrosmart-net:
+    driver: bridge

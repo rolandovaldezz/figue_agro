@@ -1,0 +1,37 @@
+# Variables de entorno (¡NUNCA subir al repo!)
+.env
+
+# Compilados Java
+**/target/
+*.class
+*.jar
+*.war
+
+# Maven
+**/.mvn/
+mvnw
+mvnw.cmd
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# Docker
+*.log
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Frontend
+**/node_modules/
+**/dist/
+
+# Certificados — solo el .example debe versionarse
+# (los reales se generan localmente o se descargan de Let's Encrypt)
+# certs/*.key
+# certs/*.p12
