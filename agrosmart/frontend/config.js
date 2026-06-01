@@ -30,7 +30,7 @@ window.AGROSMART_CONFIG = {
    *          Úsalo cuando tu backend en la nube ya esté levantado.
    */
   // Interruptor que decide si se usan datos simulados (true) o el backend real (false)
-  DEMO_MODE: true,
+  DEMO_MODE: false,
 
   /* Cada cuántos milisegundos se refresca el dashboard
    * (coincide con el intervalo del simulador del sensor-service). */
