@@ -119,6 +119,8 @@
                         <li class="nav-item"><a class="nav-link" href="#sensores" data-nav="sensores"><i class="bi bi-thermometer-half"></i> Sensores</a></li>
                         <!-- Enlace a la seccion Alertas; el badge rojo muestra el numero de alertas activas -->
                         <li class="nav-item"><a class="nav-link" href="#alertas" data-nav="alertas"><i class="bi bi-bell"></i> Alertas <span id="navAlertCount" class="badge bg-danger d-none">0</span></a></li>
+                        <!-- Enlace a la seccion Usuarios (alta de cuentas del sistema) -->
+                        <li class="nav-item"><a class="nav-link" href="#usuarios" data-nav="usuarios"><i class="bi bi-people"></i> Usuarios</a></li>
                     </ul>
                     <!-- Menu desplegable del usuario alineado a la derecha -->
                     <div class="dropdown">
@@ -158,45 +160,53 @@
                 <div class="row g-3 mb-4">
                     <!-- Columna de la tarjeta "Sensores activos" -->
                     <div class="col-6 col-lg-3">
-                        <!-- Tarjeta verde con el conteo de sensores activos -->
-                        <div class="card stat-card bg-success text-white">
+                        <!-- Tarjeta (verde suave) con el conteo de sensores activos -->
+                        <div class="card stat-card stat-green">
                             <div class="card-body">
+                                <!-- Icono decorativo de la tarjeta -->
+                                <i class="bi bi-cpu stat-icon"></i>
                                 <!-- Numero que el JavaScript actualiza con el total de sensores activos -->
                                 <div class="stat-number" id="statSensores">0</div>
-                                <div>Sensores activos</div>
+                                <div class="stat-label">Sensores activos</div>
                             </div>
                         </div>
                     </div>
                     <!-- Columna de la tarjeta "Alertas activas" -->
                     <div class="col-6 col-lg-3">
-                        <!-- Tarjeta roja con el conteo de alertas activas -->
-                        <div class="card stat-card bg-danger text-white">
+                        <!-- Tarjeta (roja suave) con el conteo de alertas activas -->
+                        <div class="card stat-card stat-red">
                             <div class="card-body">
+                                <!-- Icono decorativo de la tarjeta -->
+                                <i class="bi bi-bell stat-icon"></i>
                                 <!-- Numero que el JavaScript actualiza con el total de alertas activas -->
                                 <div class="stat-number" id="statAlertas">0</div>
-                                <div>Alertas activas</div>
+                                <div class="stat-label">Alertas activas</div>
                             </div>
                         </div>
                     </div>
                     <!-- Columna de la tarjeta "Fuera de rango" -->
                     <div class="col-6 col-lg-3">
-                        <!-- Tarjeta amarilla con el conteo de sensores fuera del rango esperado -->
-                        <div class="card stat-card bg-warning text-dark">
+                        <!-- Tarjeta (ambar suave) con el conteo de sensores fuera del rango esperado -->
+                        <div class="card stat-card stat-amber">
                             <div class="card-body">
+                                <!-- Icono decorativo de la tarjeta -->
+                                <i class="bi bi-exclamation-triangle stat-icon"></i>
                                 <!-- Numero que el JavaScript actualiza con los sensores fuera de rango -->
                                 <div class="stat-number" id="statFueraRango">0</div>
-                                <div>Fuera de rango</div>
+                                <div class="stat-label">Fuera de rango</div>
                             </div>
                         </div>
                     </div>
                     <!-- Columna de la tarjeta "Zonas monitoreadas" -->
                     <div class="col-6 col-lg-3">
-                        <!-- Tarjeta azul con el conteo de zonas distintas que se monitorean -->
-                        <div class="card stat-card bg-primary text-white">
+                        <!-- Tarjeta (azul suave) con el conteo de zonas distintas que se monitorean -->
+                        <div class="card stat-card stat-blue">
                             <div class="card-body">
+                                <!-- Icono decorativo de la tarjeta -->
+                                <i class="bi bi-geo-alt stat-icon"></i>
                                 <!-- Numero que el JavaScript actualiza con el total de zonas -->
                                 <div class="stat-number" id="statZonas">0</div>
-                                <div>Zonas monitoreadas</div>
+                                <div class="stat-label">Zonas monitoreadas</div>
                             </div>
                         </div>
                     </div>
@@ -214,8 +224,15 @@
             <!-- ---------- SENSORES ---------- -->
             <!-- Seccion de Sensores; arranca oculta con display:none y se muestra al navegar a ella -->
             <section id="page-sensores" class="page" style="display:none">
-                <!-- Titulo de la seccion de sensores -->
-                <h2 class="h4 mb-3">Sensores</h2>
+                <!-- Encabezado de la seccion con el titulo y el boton para crear un sensor -->
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <!-- Titulo de la seccion de sensores -->
+                    <h2 class="h4 mb-0">Sensores</h2>
+                    <!-- Boton que abre el formulario (modal) para dar de alta un sensor nuevo -->
+                    <button class="btn btn-success btn-sm" id="btnNuevoSensor">
+                        <i class="bi bi-plus-lg"></i> Nuevo sensor
+                    </button>
+                </div>
                 <!-- Tarjeta que contiene la tabla de sensores -->
                 <div class="card mb-4">
                     <!-- Envoltorio que permite desplazar la tabla horizontalmente en pantallas chicas -->
@@ -298,6 +315,232 @@
                 </div>
             </section>
 
+            <!-- ---------- USUARIOS ---------- -->
+            <!-- Seccion de Usuarios; arranca oculta y se muestra al navegar a ella -->
+            <section id="page-usuarios" class="page" style="display:none">
+                <!-- Titulo de la seccion -->
+                <h2 class="h4 mb-3">Usuarios</h2>
+                <!-- Fila con dos columnas: el formulario de alta a la izquierda y la tabla a la derecha -->
+                <div class="row g-4">
+
+                    <!-- Columna del formulario para crear un usuario nuevo -->
+                    <div class="col-12 col-lg-5">
+                        <!-- Tarjeta que agrupa el formulario -->
+                        <div class="card">
+                            <!-- Encabezado de la tarjeta -->
+                            <div class="card-header fw-semibold"><i class="bi bi-person-plus"></i> Nuevo usuario</div>
+                            <!-- Cuerpo con el formulario -->
+                            <div class="card-body">
+                                <!-- Caja verde de exito; arranca oculta -->
+                                <div id="usuarioOk" class="alert alert-success d-none" role="alert"></div>
+                                <!-- Caja roja de error; arranca oculta -->
+                                <div id="usuarioError" class="alert alert-danger d-none" role="alert"></div>
+
+                                <!-- Formulario de alta de usuario; el JavaScript escucha su envio -->
+                                <form id="usuarioForm">
+                                    <!-- Campo Usuario -->
+                                    <div class="mb-3">
+                                        <label for="uUsername" class="form-label">Usuario</label>
+                                        <input type="text" class="form-control" id="uUsername" required autocomplete="off">
+                                    </div>
+                                    <!-- Campo Email -->
+                                    <div class="mb-3">
+                                        <label for="uEmail" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="uEmail" required autocomplete="off">
+                                    </div>
+                                    <!-- Campo Contrasena (minimo 6 caracteres, como exige el backend) -->
+                                    <div class="mb-3">
+                                        <label for="uPassword" class="form-label">Contraseña</label>
+                                        <input type="password" class="form-control" id="uPassword" minlength="6" required autocomplete="new-password">
+                                        <div class="form-text">Mínimo 6 caracteres.</div>
+                                    </div>
+                                    <!-- Campo Nombre completo (opcional) -->
+                                    <div class="mb-3">
+                                        <label for="uNombre" class="form-label">Nombre completo <span class="text-muted">(opcional)</span></label>
+                                        <input type="text" class="form-control" id="uNombre" autocomplete="off">
+                                    </div>
+                                    <!-- Campo Rol (selector) -->
+                                    <div class="mb-3">
+                                        <label for="uRol" class="form-label">Rol</label>
+                                        <select class="form-select" id="uRol">
+                                            <option value="AGRICULTOR" selected>AGRICULTOR</option>
+                                            <option value="ADMIN">ADMIN</option>
+                                        </select>
+                                    </div>
+                                    <!-- Boton que envia el formulario -->
+                                    <button type="submit" class="btn btn-success w-100" id="usuarioBtn">
+                                        <!-- Rueda de carga mientras se procesa; arranca oculta -->
+                                        <span class="spinner-border spinner-border-sm d-none" id="usuarioSpinner"></span>
+                                        Crear usuario
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna con la tabla de usuarios creados en esta sesion -->
+                    <div class="col-12 col-lg-7">
+                        <!-- Tarjeta que agrupa la tabla -->
+                        <div class="card">
+                            <!-- Encabezado de la tarjeta con el titulo y un boton para refrescar -->
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold"><i class="bi bi-people"></i> Usuarios registrados</span>
+                                <!-- Boton que vuelve a cargar la lista desde la base de datos -->
+                                <button class="btn btn-sm btn-outline-secondary" id="btnRefrescarUsuarios" title="Refrescar">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                            <!-- Envoltorio para desplazar la tabla en pantallas chicas -->
+                            <div class="table-responsive">
+                                <!-- Tabla con TODOS los usuarios leidos de la base de datos -->
+                                <table class="table table-hover align-middle mb-0">
+                                    <!-- Encabezado de la tabla -->
+                                    <thead class="table-light">
+                                        <tr><th>Usuario</th><th>Email</th><th>Nombre</th><th>Rol</th><th>Estado</th></tr>
+                                    </thead>
+                                    <!-- Cuerpo donde el JavaScript inserta una fila por cada usuario de la BD -->
+                                    <tbody id="usuariosTable">
+                                        <!-- Fila inicial mientras cargan los datos -->
+                                        <tr><td colspan="5" class="text-center text-muted py-4"><div class="spinner-border"></div></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Nota recordando que se puede probar el JWT iniciando sesion con el usuario creado -->
+                        <p class="text-muted small mt-2 mb-0">
+                            <i class="bi bi-info-circle"></i> Lista leída desde la base de datos. Cierra sesión e inicia con un usuario nuevo para comprobar que su JWT funciona.
+                        </p>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  MODAL: Crear / Editar sensor                                -->
+    <!-- ============================================================ -->
+    <!-- Ventana emergente (modal) con el formulario para crear o editar un sensor -->
+    <div class="modal fade" id="sensorModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!-- Formulario del sensor; el JavaScript escucha su envio -->
+                <form id="sensorForm">
+                    <!-- Encabezado del modal con titulo dinamico y boton de cerrar -->
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="sensorModalTitle">Nuevo sensor</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <!-- Cuerpo del modal con los campos del sensor -->
+                    <div class="modal-body">
+                        <!-- Caja roja de error dentro del modal; arranca oculta -->
+                        <div id="sensorFormError" class="alert alert-danger d-none" role="alert"></div>
+                        <!-- Campo oculto con el id del sensor (vacio = creando, con valor = editando) -->
+                        <input type="hidden" id="sId">
+                        <!-- Campo Nombre -->
+                        <div class="mb-3">
+                            <label for="sNombre" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="sNombre" required>
+                        </div>
+                        <!-- Fila con Tipo y Unidad -->
+                        <div class="row">
+                            <!-- Campo Tipo (selector con los tipos que el alert-service sabe evaluar) -->
+                            <div class="col-7 mb-3">
+                                <label for="sTipo" class="form-label">Tipo</label>
+                                <select class="form-select" id="sTipo">
+                                    <option value="temperatura">temperatura</option>
+                                    <option value="humedad">humedad</option>
+                                    <option value="ph">ph</option>
+                                </select>
+                            </div>
+                            <!-- Campo Unidad -->
+                            <div class="col-5 mb-3">
+                                <label for="sUnidad" class="form-label">Unidad</label>
+                                <input type="text" class="form-control" id="sUnidad" placeholder="C, %, pH" required>
+                            </div>
+                        </div>
+                        <!-- Campo Zona -->
+                        <div class="mb-3">
+                            <label for="sZona" class="form-label">Zona</label>
+                            <input type="text" class="form-control" id="sZona" placeholder="zona1, zona2, invernadero_norte" required>
+                        </div>
+                        <!-- Fila con el rango esperado (minimo y maximo) -->
+                        <div class="row">
+                            <!-- Campo Valor minimo esperado -->
+                            <div class="col-6 mb-3">
+                                <label for="sMin" class="form-label">Mín. esperado</label>
+                                <input type="number" step="any" class="form-control" id="sMin">
+                            </div>
+                            <!-- Campo Valor maximo esperado -->
+                            <div class="col-6 mb-3">
+                                <label for="sMax" class="form-label">Máx. esperado</label>
+                                <input type="number" step="any" class="form-control" id="sMax">
+                            </div>
+                        </div>
+                        <!-- Casilla para activar/desactivar el sensor -->
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="sActivo" checked>
+                            <label class="form-check-label" for="sActivo">Activo (genera lecturas)</label>
+                        </div>
+                    </div>
+                    <!-- Pie del modal con los botones de accion -->
+                    <div class="modal-footer">
+                        <!-- Boton para cerrar sin guardar -->
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <!-- Boton que guarda el sensor (crea o actualiza) -->
+                        <button type="submit" class="btn btn-success" id="sensorGuardarBtn">
+                            <!-- Rueda de carga mientras se guarda; arranca oculta -->
+                            <span class="spinner-border spinner-border-sm d-none" id="sensorGuardarSpinner"></span>
+                            Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  MODAL: Enviar alerta por correo                             -->
+    <!-- ============================================================ -->
+    <!-- Ventana emergente para mandar una alerta al correo que elija el usuario -->
+    <div class="modal fade" id="correoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!-- Formulario de envio; el JavaScript escucha su submit -->
+                <form id="correoForm">
+                    <!-- Encabezado del modal -->
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="bi bi-envelope"></i> Enviar alerta por correo</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <!-- Cuerpo del modal -->
+                    <div class="modal-body">
+                        <!-- Caja de error; arranca oculta -->
+                        <div id="correoError" class="alert alert-danger d-none" role="alert"></div>
+                        <!-- Vista previa de la alerta que se va a enviar -->
+                        <div class="mb-3">
+                            <label class="form-label">Alerta a enviar</label>
+                            <div id="correoPreview" class="border rounded p-2 bg-light small"></div>
+                        </div>
+                        <!-- Campo del correo destino -->
+                        <div class="mb-1">
+                            <label for="correoDestino" class="form-label">Correo del destinatario</label>
+                            <input type="email" class="form-control" id="correoDestino" placeholder="ejemplo@correo.com" required autocomplete="off">
+                            <div class="form-text">A quién quieres mandarle esta alerta (tu profe, un compañero, etc.).</div>
+                        </div>
+                    </div>
+                    <!-- Pie del modal con los botones -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <!-- Boton que envia el correo -->
+                        <button type="submit" class="btn btn-success" id="correoEnviarBtn">
+                            <span class="spinner-border spinner-border-sm d-none" id="correoSpinner"></span>
+                            Enviar
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 

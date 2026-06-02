@@ -35,3 +35,6 @@ Thumbs.db
 # (los reales se generan localmente o se descargan de Let's Encrypt)
 # certs/*.key
 # certs/*.p12
+
+# Copia/clon anidado del proyecto (tiene su propio .git; no se incluye)
+figue_agro/

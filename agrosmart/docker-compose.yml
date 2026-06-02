@@ -84,7 +84,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       MQTT_BROKER_URL: tcp://mosquitto:1883
       MQTT_CLIENT_ID:  sensor-service
-      SIMULATOR_INTERVAL_MS: 5000     # cada 5s publica una lectura
+      SIMULATOR_INTERVAL_MS: ${SIMULATOR_INTERVAL_MS:-30000}   # cada cuanto publica una lectura (30s por defecto; configurable en .env)
     expose:
       - "8082"
     # Arranca despues de Mosquitto porque necesita el broker para publicar
@@ -116,6 +116,34 @@ services:
       MQTT_CLIENT_ID:  alert-service
     expose:
       - "8083"
+    # Arranca despues de Mosquitto porque se suscribe al broker
+    depends_on:
+      - mosquitto
+    networks:
+      - agrosmart-net
+
+  # ----------------------------------------------------------
+  # Microservicio de notificaciones (consume alertas MQTT + envía correo)
+  # ----------------------------------------------------------
+  notification-service:
+    # Construye la imagen desde el Dockerfile de notification-service
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: agrosmart-notification
+    restart: unless-stopped
+    # Variables de entorno: broker MQTT y datos del correo (se inyectan desde .env)
+    environment:
+      SERVER_PORT: 8084
+      MQTT_BROKER_URL: tcp://mosquitto:1883
+      MQTT_CLIENT_ID:  notification-service
+      MAIL_USERNAME:   ${MAIL_USERNAME}        # tu Gmail (remitente)
+      MAIL_PASSWORD:   ${MAIL_PASSWORD}        # contrasena de aplicacion de Gmail (16 caracteres)
+      MAIL_TO:         ${MAIL_TO}              # a quien llegan las alertas
+      NOTIFY_SEVERITIES: ${NOTIFY_SEVERITIES}  # severidades que disparan correo (ej. ALTA,CRITICA)
+      NOTIFY_COOLDOWN_MINUTES: ${NOTIFY_COOLDOWN_MINUTES:-30}  # minutos entre correos del mismo sensor (anti-baneo)
+    expose:
+      - "8084"
     # Arranca despues de Mosquitto porque se suscribe al broker
     depends_on:
       - mosquitto
@@ -164,9 +192,12 @@ services:
       dockerfile: Dockerfile
     container_name: agrosmart-frontend
     restart: unless-stopped
-    # Publica el sitio web: puerto 8080 del host -> puerto 80 de NGINX
+    # Publica el sitio web por HTTPS: puerto 8080 del host -> puerto 443 (TLS) de NGINX
     ports:
-      - "8080:80"
+      - "8080:443"
+    # Monta los certificados TLS del host como solo lectura (los mismos que usa el gateway)
+    volumes:
+      - ./certs:/certs:ro
     # Arranca despues del gateway, que es a quien consume el frontend
     depends_on:
       - api-gateway

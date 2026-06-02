@@ -17,8 +17,13 @@ window.AGROSMART_CONFIG = {
    * debes abrir esa URL en el navegador y aceptar la advertencia,
    * o el navegador bloqueará las peticiones del frontend.
    */
-  // Direccion del backend al que se conectara el frontend cuando el modo DEMO este apagado
-  API_BASE_URL: "https://localhost:8443/api",
+  // Direccion del backend. Por defecto usamos una ruta RELATIVA "/api": el propio
+  // NGINX del frontend hace de proxy hacia el gateway, así el navegador habla con
+  // el MISMO origen (http://localhost:8080) y NO necesita aceptar el certificado
+  // autofirmado ni lidiar con CORS.
+  //   - Vía proxy (recomendado): "/api"
+  //   - Directo al gateway:      "https://localhost:8443/api"  (requiere aceptar el certificado)
+  API_BASE_URL: "/api",
 
   /* MODO DEMO
    * ---------

@@ -31,6 +31,14 @@ spring:                                              # configuracion general de 
           filters:                                   # filtros que se aplican antes de reenviar
             - StripPrefix=1   # /api/auth/login → /auth/login
 
+        # auth-service (listado de usuarios) - CON validación JWT
+        - id: usuarios-route                         # identificador de la ruta del listado de usuarios
+          uri: ${AUTH_SERVICE_URL:http://auth-service:8081}  # mismo destino: el auth-service
+          predicates:                                # condiciones de coincidencia de la ruta
+            - Path=/api/usuarios/**                  # aplica a rutas que empiezan con /api/usuarios/
+          filters:                                   # filtros aplicados a esta ruta
+            - StripPrefix=1   # /api/usuarios → /usuarios  (el JWT SÍ se valida: no es /api/auth/)
+
         # sensor-service - CON validación JWT
         - id: sensor-route                           # identificador unico de la ruta de sensores
           uri: ${SENSOR_SERVICE_URL:http://sensor-service:8082}  # destino interno del sensor-service
@@ -46,6 +54,14 @@ spring:                                              # configuracion general de 
             - Path=/api/alertas/**                   # aplica a rutas que empiezan con /api/alertas/
           filters:                                   # filtros aplicados a esta ruta
             - StripPrefix=1                          # elimina el primer segmento (/api) antes de reenviar
+
+        # notification-service (envío manual de alertas por correo) - CON validación JWT
+        - id: notificaciones-route                   # identificador de la ruta de notificaciones
+          uri: ${NOTIFICATION_SERVICE_URL:http://notification-service:8084}  # destino interno del notification-service
+          predicates:                                # condiciones de coincidencia de la ruta
+            - Path=/api/notificaciones/**            # aplica a rutas que empiezan con /api/notificaciones/
+          filters:                                   # filtros aplicados a esta ruta
+            - StripPrefix=1                          # /api/notificaciones/enviar → /notificaciones/enviar
 
       # CORS para que el frontend pueda llamar al gateway
       globalcors:                                    # configuracion global de CORS

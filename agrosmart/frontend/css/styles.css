@@ -1,99 +1,199 @@
 /* ============================================================
  * AgroSmart - Estilos propios (complementan a Bootstrap)
+ * Rediseño: limpio, moderno y profesional (colores suaves).
  * ============================================================ */
 
-/* Define variables de color reutilizables en toda la hoja (paleta de la marca) */
+/* Tipografía moderna (Inter) cargada desde Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ---------- Paleta y variables ---------- */
 :root {
-  --agro-green: #2e7d32;       /* Verde principal de AgroSmart */
-  --agro-green-dark: #1b5e20;  /* Verde mas oscuro para variantes */
-  --agro-bg: #f4f7f4;          /* Color de fondo general de la pagina */
+  --agro-green:      #2f7d57;   /* verde principal, sobrio (no neón) */
+  --agro-green-dark: #245f42;   /* verde para hover/estados activos */
+  --agro-green-soft: #eaf4ee;   /* fondo verde muy tenue */
+
+  --bg:      #f4f6f8;           /* fondo general neutro y claro */
+  --surface: #ffffff;          /* color de las tarjetas */
+  --border:  #e8ebef;          /* bordes suaves */
+  --text:    #1f2a37;          /* texto principal (slate oscuro) */
+  --muted:   #6b7280;          /* texto secundario/gris */
+
+  --radius:    14px;           /* redondeo estándar de tarjetas */
+  --radius-sm: 9px;            /* redondeo de botones/inputs */
+  --shadow-sm: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06); /* sombra sutil */
+  --shadow-md: 0 4px 14px rgba(16,24,40,.07), 0 2px 6px rgba(16,24,40,.04); /* sombra al pasar el mouse */
 }
 
-/* Estilos del cuerpo: fondo claro y altura minima de toda la ventana */
+/* ---------- Base ---------- */
 body {
-  background-color: var(--agro-bg); /* Aplica el color de fondo definido arriba */
-  min-height: 100vh;                /* Ocupa al menos el 100% del alto de la pantalla */
+  background-color: var(--bg);                 /* fondo claro y neutro */
+  color: var(--text);                          /* texto oscuro legible */
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; /* tipografía moderna */
+  min-height: 100vh;                           /* ocupa todo el alto */
+  -webkit-font-smoothing: antialiased;         /* texto más nítido */
+  -moz-osx-font-smoothing: grayscale;
 }
+
+h1, h2, h3, h4, h5, h6 { letter-spacing: -.01em; }  /* títulos un poco más compactos */
+a { text-decoration: none; }                        /* enlaces sin subrayado por defecto */
 
 /* ---------- Login ---------- */
-/* Envoltorio del login: centra la tarjeta vertical y horizontalmente con fondo degradado verde */
 .login-wrapper {
-  min-height: 100vh;        /* Ocupa todo el alto de la pantalla */
-  display: flex;            /* Activa flexbox para poder centrar */
-  align-items: center;      /* Centra verticalmente */
-  justify-content: center;  /* Centra horizontalmente */
-  background: linear-gradient(135deg, #2e7d32 0%, #66bb6a 100%); /* Fondo con degradado de verdes */
+  min-height: 100vh;                                 /* pantalla completa */
+  display: flex; align-items: center; justify-content: center; /* centra la tarjeta */
+  background: linear-gradient(135deg, #245f42 0%, #2f7d57 55%, #4f9e76 100%); /* degradado verde sobrio */
+  padding: 1rem;
 }
-/* Tarjeta del login: ancho limitado, esquinas redondeadas y sombra */
 .login-card {
-  width: 100%;                              /* Ocupa el ancho disponible... */
-  max-width: 400px;                         /* ...pero sin pasar de 400px */
-  border: none;                             /* Sin borde */
-  border-radius: 1rem;                      /* Esquinas redondeadas */
-  box-shadow: 0 1rem 3rem rgba(0, 0, 0, .2); /* Sombra suave alrededor */
+  width: 100%; max-width: 400px;                     /* ancho controlado */
+  border: none; border-radius: 18px;                 /* esquinas redondeadas */
+  box-shadow: 0 24px 60px rgba(16,24,40,.22);        /* sombra elegante */
 }
 
 /* ---------- Navbar ---------- */
-/* Pone en negrita el nombre de la marca en la barra de navegacion */
-.navbar-brand { font-weight: 700; }
-/* Pinta la barra de navegacion con el verde de la marca (!important fuerza el color sobre Bootstrap) */
-.navbar-agro { background-color: var(--agro-green) !important; }
+.navbar-agro {
+  background: linear-gradient(135deg, #2f7d57 0%, #256546 100%) !important; /* verde con leve degradado */
+  box-shadow: 0 1px 3px rgba(16,24,40,.12);          /* sombra fina bajo la barra */
+  padding-top: .55rem; padding-bottom: .55rem;
+}
+.navbar-brand { font-weight: 700; letter-spacing: .2px; }     /* marca en negrita */
+.navbar-agro .nav-link {
+  font-weight: 500; color: rgba(255,255,255,.82) !important;  /* enlaces casi blancos */
+  border-radius: 8px; padding: .4rem .75rem !important;       /* área clicable cómoda */
+  transition: background .15s ease, color .15s ease;
+}
+.navbar-agro .nav-link:hover { color: #fff !important; background: rgba(255,255,255,.12); } /* hover suave */
+.navbar-agro .nav-link.active { color: #fff !important; background: rgba(255,255,255,.18); } /* sección activa */
+/* El contador de alertas en la barra debe resaltar (rojo sólido) */
+.navbar #navAlertCount { background: #e4572e !important; color: #fff !important; font-weight: 600; }
+
+/* ---------- Tarjetas (general) ---------- */
+.card {
+  border: 1px solid var(--border);                   /* borde suave en vez de sombra dura */
+  border-radius: var(--radius);                      /* esquinas redondeadas */
+  box-shadow: var(--shadow-sm);                      /* sombra muy sutil */
+  background: var(--surface);
+}
+.card-header {
+  background: transparent;                            /* encabezado limpio */
+  border-bottom: 1px solid var(--border);
+  font-weight: 600; padding: .85rem 1.1rem;
+}
+
+/* ---------- Tarjetas de estadísticas (dashboard) ---------- */
+.stat-card {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-sm); overflow: hidden;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); } /* leve elevación */
+.stat-card .card-body { padding: 1.15rem 1.25rem; position: relative; }
+.stat-number { font-size: 2rem; font-weight: 700; line-height: 1.1; }   /* número grande */
+.stat-label  { font-size: .85rem; color: var(--muted); font-weight: 500; margin-top: .1rem; } /* etiqueta gris */
+.stat-icon {
+  position: absolute; top: 1rem; right: 1.1rem;      /* icono decorativo arriba a la derecha */
+  font-size: 1.6rem; opacity: .35;                   /* tenue para no competir con el número */
+}
+
+/* Variantes con fondo tenue + número e icono en color (suave, no saturado) */
+.stat-green { background: #eaf4ee; }
+.stat-green .stat-number, .stat-green .stat-icon { color: #2f7d57; }
+.stat-red   { background: #fdecec; }
+.stat-red   .stat-number, .stat-red   .stat-icon { color: #cc3f50; }
+.stat-amber { background: #fdf3e3; }
+.stat-amber .stat-number, .stat-amber .stat-icon { color: #b9770f; }
+.stat-blue  { background: #eaf1fb; }
+.stat-blue  .stat-number, .stat-blue  .stat-icon { color: #3f72af; }
 
 /* ---------- Tarjetas de sensores ---------- */
-/* Tarjeta de sensor: barra de color a la izquierda y animacion suave al pasar el mouse */
-.sensor-card { border-left: 5px solid #ccc; transition: transform .15s ease; }
-/* Efecto al pasar el mouse: la tarjeta sube ligeramente */
-.sensor-card:hover { transform: translateY(-3px); }
-/* Borde izquierdo verde cuando el sensor esta en estado normal */
-.sensor-card.estado-ok      { border-left-color: #2e7d32; }
-/* Borde izquierdo amarillo cuando el sensor esta en estado de alerta */
-.sensor-card.estado-alerta  { border-left-color: #f9a825; }
-/* Borde izquierdo rojo cuando el sensor esta en estado critico */
-.sensor-card.estado-critico { border-left-color: #c62828; }
-/* Estilo del valor grande de la lectura del sensor (numero principal) */
-.sensor-value { font-size: 2.2rem; font-weight: 700; line-height: 1; }
-/* Estilo de la unidad de medida al lado del valor (mas pequena y gris) */
-.sensor-unit  { font-size: 1rem; color: #6c757d; }
+.sensor-card {
+  border: 1px solid var(--border); border-left: 4px solid #cbd5e1;  /* acento de color a la izquierda */
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.sensor-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); } /* elevación al pasar el mouse */
+.sensor-card.estado-ok      { border-left-color: #3da06e; }   /* normal: verde suave */
+.sensor-card.estado-alerta  { border-left-color: #e0a516; }   /* atención: ámbar suave */
+.sensor-card.estado-critico { border-left-color: #d1495b; }   /* crítico: rojo suave */
+.sensor-value { font-size: 2.1rem; font-weight: 700; line-height: 1; color: var(--text); } /* valor grande */
+.sensor-unit  { font-size: 1rem; color: var(--muted); }       /* unidad en gris */
 
-/* Tarjetas de estadisticas del dashboard: sin borde y con esquinas redondeadas */
-.stat-card { border: none; border-radius: .75rem; }
-/* Numero grande dentro de las tarjetas de estadisticas */
-.stat-number { font-size: 2rem; font-weight: 700; }
+/* ---------- Badges (etiquetas tipo "pill" tenues) ---------- */
+.badge { font-weight: 600; padding: .42em .7em; border-radius: 999px; letter-spacing: .2px; }
 
-/* ---------- Badges de severidad ---------- */
-/* Color azul para la etiqueta de severidad BAJA */
-.sev-BAJA    { background-color: #0d6efd; }
-/* Color naranja para la etiqueta de severidad MEDIA */
-.sev-MEDIA   { background-color: #fd7e14; }
-/* Color rojo para la etiqueta de severidad ALTA */
-.sev-ALTA    { background-color: #dc3545; }
-/* Color morado para la etiqueta de severidad CRITICA */
-.sev-CRITICA { background-color: #6f42c1; }
+/* Severidad de alertas (suaves: fondo tenue + texto en color) */
+.sev-BAJA    { background: #eaf1fb !important; color: #3f72af !important; }
+.sev-MEDIA   { background: #fdf3e3 !important; color: #b9770f !important; }
+.sev-ALTA    { background: #fdeaec !important; color: #cc3f50 !important; }
+.sev-CRITICA { background: #f1ebfa !important; color: #7c4dbd !important; }
 
-/* Cambia el cursor a una mano para indicar que un elemento es clickeable */
-.cursor-pointer { cursor: pointer; }
+/* Suaviza también las etiquetas de estado de Bootstrap (Normal/Activo/Resuelta, etc.) */
+.badge.bg-success   { background: #e7f4ec !important; color: #2f7d57 !important; }
+.badge.bg-danger    { background: #fdeaec !important; color: #cc3f50 !important; }
+.badge.bg-warning   { background: #fdf3e3 !important; color: #b9770f !important; }
+.badge.bg-secondary { background: #eef1f4 !important; color: #5b6675 !important; }
+.badge.bg-primary   { background: #eaf1fb !important; color: #3f72af !important; }
 
-/* Indicador "en vivo" */
-/* Punto verde del indicador "en vivo" con una animacion que lo hace pulsar */
+/* ---------- Botones ---------- */
+.btn { border-radius: var(--radius-sm); font-weight: 500; }    /* botones redondeados */
+.btn-success {
+  background: var(--agro-green); border-color: var(--agro-green); /* verde de la marca */
+}
+.btn-success:hover, .btn-success:focus, .btn-success:active {
+  background: var(--agro-green-dark) !important; border-color: var(--agro-green-dark) !important;
+}
+.btn-outline-success { color: var(--agro-green); border-color: #bcdcca; } /* contorno verde suave */
+.btn-outline-success:hover { background: var(--agro-green); border-color: var(--agro-green); color: #fff; }
+.btn-outline-secondary { border-color: var(--border); color: var(--muted); }
+.btn-outline-secondary:hover { background: #f1f3f5; color: var(--text); border-color: #d8dce1; }
+
+/* ---------- Tablas ---------- */
+.table { color: var(--text); }
+.table > :not(caption) > * > * { padding: .8rem 1rem; }        /* más aire entre celdas */
+.table > thead, .table-light, .table-light > tr > * {
+  background: #f7f9fb !important;                               /* encabezado gris muy claro */
+}
+.table thead th {
+  font-size: .76rem; text-transform: uppercase; letter-spacing: .5px;  /* encabezados tipo etiqueta */
+  color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border);
+}
+.table td, .table th { border-color: var(--border); vertical-align: middle; }
+.table-hover > tbody > tr:hover > * { background: #f6f9f7; }   /* hover de fila muy sutil */
+
+/* ---------- Formularios ---------- */
+.form-control, .form-select { border-radius: var(--radius-sm); border-color: var(--border); }
+.form-control:focus, .form-select:focus {
+  border-color: var(--agro-green);                              /* foco verde */
+  box-shadow: 0 0 0 .2rem rgba(47,125,87,.15);                  /* halo verde suave */
+}
+.input-group-text { background: #f3f5f7; border-color: var(--border); color: var(--muted); }
+.form-label { font-weight: 500; font-size: .9rem; color: #374151; }
+
+/* ---------- Modales ---------- */
+.modal-content { border: none; border-radius: var(--radius); box-shadow: 0 24px 60px rgba(16,24,40,.22); }
+.modal-header, .modal-footer { border-color: var(--border); }
+
+/* ---------- Indicador "en vivo" ---------- */
 .live-dot {
-  display: inline-block; width: 9px; height: 9px; /* Punto pequeno en linea con el texto */
-  background: #2e7d32; border-radius: 50%;         /* Verde y circular */
-  margin-right: 4px; animation: pulse 1.5s infinite; /* Separacion y animacion de pulso en bucle */
+  display: inline-block; width: 9px; height: 9px;               /* punto pequeño */
+  background: var(--agro-green); border-radius: 50%;            /* verde y circular */
+  margin-right: 5px; animation: pulse 1.6s infinite;           /* pulso continuo */
 }
-/* Animacion "pulse": crea un halo que crece y se desvanece alrededor del punto */
 @keyframes pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(46, 125, 50, .6); }  /* Inicio: halo pegado y visible */
-  70%  { box-shadow: 0 0 0 8px rgba(46, 125, 50, 0); } /* A mitad: halo expandido y transparente */
-  100% { box-shadow: 0 0 0 0 rgba(46, 125, 50, 0); }   /* Fin: vuelve al inicio para repetir */
+  0%   { box-shadow: 0 0 0 0 rgba(47,125,87,.55); }             /* halo pegado */
+  70%  { box-shadow: 0 0 0 8px rgba(47,125,87,0); }             /* halo expandido y transparente */
+  100% { box-shadow: 0 0 0 0 rgba(47,125,87,0); }              /* reinicia */
 }
 
-/* Estilo de la cinta superior de modo DEMO (barra naranja de aviso) */
+/* ---------- Varios ---------- */
+.cursor-pointer { cursor: pointer; }                            /* mano sobre elementos clicables */
+
+/* Cinta superior de modo DEMO (aviso, en tono ámbar discreto) */
 .demo-ribbon {
-  background: #ff3d00; color: #fff; font-size: .75rem; font-weight: 600; /* Naranja con texto blanco en negrita */
-  text-align: center; padding: 2px 0; letter-spacing: .5px;              /* Centrado, con relleno y letras espaciadas */
+  background: #b9770f; color: #fff; font-size: .75rem; font-weight: 600;
+  text-align: center; padding: 3px 0; letter-spacing: .5px;
 }
 
-/* Por defecto las vistas (login/app) estan ocultas */
+/* Vistas (login / app): solo se muestra la que tenga .active */
 .view { display: none; }
-/* La vista que tenga la clase "active" se muestra (asi se alterna entre login y app) */
 .view.active { display: block; }

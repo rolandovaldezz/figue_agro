@@ -17,12 +17,16 @@ RUN rm -rf /usr/share/nginx/html/*
 # Lleva el HTML/JS/CSS del proyecto a la carpeta publica que sirve NGINX
 COPY . /usr/share/nginx/html/
 
-# Quitamos archivos que no deben servirse
-# Elimina el Dockerfile y el .dockerignore para que no queden expuestos en la web
-RUN rm -f /usr/share/nginx/html/Dockerfile /usr/share/nginx/html/.dockerignore
+# Instalamos nuestra configuracion de NGINX (sirve estaticos + proxy /api -> gateway)
+# Reemplaza la configuracion por defecto del servidor web
+COPY nginx-default.conf /etc/nginx/conf.d/default.conf
 
-# Puerto interno donde NGINX sirve el sitio (HTTP)
-EXPOSE 80
+# Quitamos archivos que no deben servirse
+# Elimina el Dockerfile, el .dockerignore y la config (ya copiada) para que no queden expuestos en la web
+RUN rm -f /usr/share/nginx/html/Dockerfile /usr/share/nginx/html/.dockerignore /usr/share/nginx/html/nginx-default.conf
+
+# Puertos internos: 443 (HTTPS, principal) y 80 (solo redirige a HTTPS)
+EXPOSE 443 80
 
 # NGINX corre como entrypoint por defecto
 # La imagen base ya define el comando de arranque, por eso no se declara ENTRYPOINT aqui

@@ -1,0 +1,63 @@
+# ============================================================
+# notification-service - Configuración
+# ============================================================
+# Escucha las alertas por MQTT y las envía por correo (SMTP Gmail).
+# Los datos sensibles vienen de variables de entorno (.env via compose).
+# ============================================================
+
+server:                                              # configuracion del servidor web del servicio
+  port: ${SERVER_PORT:8084}                          # puerto de escucha; usa SERVER_PORT o 8084 por defecto
+
+spring:                                              # configuracion general de Spring
+  application:                                       # datos de la aplicacion
+    name: notification-service                       # nombre logico del servicio
+
+  # ---------- Correo (SMTP de Gmail) ----------
+  mail:                                              # configuracion del envio de correos
+    host: smtp.gmail.com                             # servidor SMTP de Gmail
+    port: 587                                        # puerto SMTP con STARTTLS
+    username: ${MAIL_USERNAME}                       # tu correo Gmail (remitente), desde variable de entorno
+    password: ${MAIL_PASSWORD}                       # contrasena de aplicacion de Gmail (16 caracteres), desde variable de entorno
+    properties:                                      # propiedades extra del protocolo SMTP
+      mail:                                          # raiz de propiedades de JavaMail
+        smtp:                                        # opciones del transporte SMTP
+          auth: true                                 # requiere autenticacion con usuario y contrasena
+          starttls:                                  # cifrado TLS por STARTTLS
+            enable: true                             # habilita STARTTLS
+            required: true                           # exige que la conexion se cifre
+        connectiontimeout: 8000                      # tiempo maximo para conectar al servidor (ms)
+        timeout: 8000                                # tiempo maximo de lectura (ms)
+        writetimeout: 8000                           # tiempo maximo de escritura (ms)
+
+# ---------- Notificaciones ----------
+notify:                                              # configuracion propia de las notificaciones
+  from: ${MAIL_USERNAME}                             # remitente del correo (el mismo Gmail)
+  to: ${MAIL_TO:${MAIL_USERNAME}}                    # destinatario; si no se define, se envia a uno mismo
+  severidades: ${NOTIFY_SEVERITIES:ALTA,CRITICA}     # severidades que SI disparan correo (separadas por coma)
+  cooldown-minutes: ${NOTIFY_COOLDOWN_MINUTES:30}    # minutos de espera entre correos del MISMO sensor (anti-spam / anti-baneo)
+
+# ---------- MQTT (consumer) ----------
+mqtt:                                                # configuracion de la conexion MQTT (este servicio consume alertas)
+  broker-url: ${MQTT_BROKER_URL:tcp://localhost:1883}  # URL del broker MQTT; usa la variable o localhost:1883
+  client-id: ${MQTT_CLIENT_ID:notification-service}  # identificador del cliente MQTT
+  topic-alertas: agrosmart/alertas                   # topic donde el alert-service publica las alertas
+  qos: 1                                             # calidad de servicio 1 (entrega al menos una vez)
+
+# ---------- Actuator (healthcheck Docker) ----------
+management:                                          # configuracion de Actuator (monitoreo)
+  endpoints:                                         # endpoints de gestion expuestos
+    web:                                             # exposicion via web
+      exposure:                                      # control de que endpoints se publican
+        include: health,info                         # expone solo salud e info
+  endpoint:                                          # configuracion de endpoints individuales
+    health:                                          # endpoint de salud
+      show-details: never                            # nunca muestra detalles internos en el healthcheck
+  health:                                            # configuracion de los indicadores de salud
+    mail:                                            # indicador de salud del correo (SMTP)
+      enabled: false                                 # lo desactivamos: la salud del contenedor no debe depender de poder conectar a Gmail
+
+# ---------- Logging ----------
+logging:                                             # configuracion de niveles de log
+  level:                                             # niveles por paquete
+    root: INFO                                       # nivel general de la aplicacion
+    com.agrosmart: DEBUG                             # nivel detallado para el codigo propio del proyecto

@@ -160,6 +160,16 @@ window.Api = (function () {
   // Funcion corta que indica si el modo DEMO esta activo
   const DEMO = () => CFG.DEMO_MODE === true;
 
+  // Error estandar para acciones de escritura que no tienen sentido en modo demo (datos falsos)
+  function demoNoDisponible() {
+    // Mensaje que orienta a apagar el modo demo para usar el backend real
+    const e = new Error("Esta acción necesita el backend real. Cambia DEMO_MODE a false en config.js.");
+    // status 0 = no llego a haber peticion HTTP
+    e.status = 0;
+    // Devuelve el error para que quien llame lo lance
+    return e;
+  }
+
   // ============================================================
   //  API pública usada por la app
   // ============================================================
@@ -243,6 +253,64 @@ window.Api = (function () {
       const data = await request("POST", "/alertas/" + id + "/resolver", null, true);
       // Devuelve la alerta normalizada o, si no hay cuerpo, una marca minima de resuelta
       return data ? normAlerta(data) : { id, resuelta: true };
+    },
+
+    // -------- Alta/edicion/baja de sensores (CRUD, requieren JWT) --------
+
+    // Crea un sensor nuevo (POST /sensores). 'data' lleva nombre, tipo, zona, unidad, min y max
+    async crearSensor(data) {
+      // En modo demo no aplica: avisamos que se necesita el backend real
+      if (DEMO()) throw demoNoDisponible();
+      // Envia el sensor al backend con el token (auth=true) y devuelve el creado normalizado
+      const creado = await request("POST", "/sensores", data, true);
+      // Normaliza la respuesta para que el frontend la use uniforme
+      return creado ? normSensor(creado) : null;
+    },
+
+    // Actualiza un sensor existente (PUT /sensores/{id})
+    async actualizarSensor(id, data) {
+      // En modo demo no aplica
+      if (DEMO()) throw demoNoDisponible();
+      // Envia los nuevos datos del sensor con el token
+      const upd = await request("PUT", "/sensores/" + id, data, true);
+      // Normaliza la respuesta
+      return upd ? normSensor(upd) : null;
+    },
+
+    // Elimina un sensor (DELETE /sensores/{id})
+    async eliminarSensor(id) {
+      // En modo demo no aplica
+      if (DEMO()) throw demoNoDisponible();
+      // Pide el borrado al backend con el token; no devuelve cuerpo (204)
+      return await request("DELETE", "/sensores/" + id, null, true);
+    },
+
+    // -------- Alta de usuarios --------
+
+    // Registra un usuario nuevo (POST /auth/register). Es ruta publica (el gateway NO exige JWT en /api/auth/**)
+    async registrarUsuario(data) {
+      // En modo demo no aplica: avisamos que se necesita el backend real
+      if (DEMO()) throw demoNoDisponible();
+      // Envia los datos del usuario (username, email, password, nombreCompleto, rol). auth=false porque es publica
+      return await request("POST", "/auth/register", data, false);
+    },
+
+    // Lista TODOS los usuarios registrados (GET /usuarios). Ruta protegida: requiere JWT.
+    async listarUsuarios() {
+      // En modo demo no aplica
+      if (DEMO()) throw demoNoDisponible();
+      // Pide la lista al backend con el token; devuelve un arreglo de usuarios (sin contrasena)
+      const data = await request("GET", "/usuarios", null, true);
+      // Asegura que siempre sea un arreglo
+      return arr(data);
+    },
+
+    // Envía una alerta por correo a un destinatario elegido (POST /notificaciones/enviar, requiere JWT)
+    async enviarAlertaCorreo(destinatario, alerta) {
+      // En modo demo no aplica
+      if (DEMO()) throw demoNoDisponible();
+      // Envia el destinatario y los datos de la alerta al backend con el token
+      return await request("POST", "/notificaciones/enviar", { destinatario, alerta }, true);
     }
   };
 })();

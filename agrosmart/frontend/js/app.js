@@ -25,6 +25,8 @@
   let historyChart = null;
   // Seccion que se esta mostrando actualmente (dashboard, sensores o alertas)
   let currentPage = "dashboard";
+  // Cache de las alertas mostradas actualmente (para buscar una por id al mandarla por correo)
+  let alertasActuales = [];
 
   // ---------- Utilidades ----------
   // Muestra un aviso emergente (toast) con un mensaje y un color segun el tipo
@@ -168,7 +170,7 @@
   // Cambia entre secciones segun el nombre de pagina recibido
   function navegar(page) {
     // Si la pagina no es valida, vuelve al dashboard
-    if (!["dashboard", "sensores", "alertas"].includes(page)) page = "dashboard";
+    if (!["dashboard", "sensores", "alertas", "usuarios"].includes(page)) page = "dashboard";
     // Recuerda la pagina actual
     currentPage = page;
     // Oculta todas las secciones
@@ -182,6 +184,7 @@
     if (page === "dashboard") cargarDashboard();
     if (page === "sensores")  cargarSensores();
     if (page === "alertas")   cargarAlertas();
+    if (page === "usuarios")  cargarUsuarios();
   }
 
   // Cuando cambia la parte # de la URL, vuelve a navegar a la seccion indicada
@@ -383,7 +386,11 @@
           "<td>" + fmtRango(s) + "</td>" +
           "<td><strong>" + (valor != null ? valor : "—") + "</strong></td>" +
           "<td>" + estTxt + "</td>" +
-          '<td><button class="btn btn-sm btn-outline-success" data-sensor="' + s.id + '"><i class="bi bi-graph-up"></i> Historial</button></td>';
+          '<td class="text-nowrap">' +
+            '<button class="btn btn-sm btn-outline-success" data-sensor="' + s.id + '" title="Historial"><i class="bi bi-graph-up"></i></button> ' +
+            '<button class="btn btn-sm btn-outline-primary" data-editar="' + s.id + '" title="Editar"><i class="bi bi-pencil"></i></button> ' +
+            '<button class="btn btn-sm btn-outline-danger" data-eliminar="' + s.id + '" title="Eliminar"><i class="bi bi-trash"></i></button>' +
+          '</td>';
         // Agrega la fila a la tabla
         tb.appendChild(tr);
       });
@@ -392,6 +399,16 @@
       $$("#sensoresTable [data-sensor]").forEach(btn => {
         // Al hacer clic, muestra el historial del sensor (convierte el id de texto a numero)
         btn.addEventListener("click", () => mostrarHistorial(Number(btn.dataset.sensor)));
+      });
+      // Asigna a cada boton "Editar" el evento que abre el modal con los datos del sensor
+      $$("#sensoresTable [data-editar]").forEach(btn => {
+        // Busca el sensor por su id y abre el modal en modo edicion
+        btn.addEventListener("click", () => abrirModalSensor(sensoresById[Number(btn.dataset.editar)]));
+      });
+      // Asigna a cada boton "Eliminar" el evento que pide confirmacion y borra el sensor
+      $$("#sensoresTable [data-eliminar]").forEach(btn => {
+        // Al hacer clic, ejecuta la baja del sensor
+        btn.addEventListener("click", () => eliminarSensorUI(Number(btn.dataset.eliminar), btn));
       });
     } catch (ex) {
       // Si algo falla, maneja el error de forma comun
@@ -477,6 +494,8 @@
       const soloActivas = $("#filterActivas").checked;
       // Pide las alertas segun el filtro
       const alertas = await Api.getAlertas(soloActivas);
+      // Guarda las alertas para poder buscarlas por id al mandarlas por correo
+      alertasActuales = alertas;
 
       // Referencia al cuerpo de la tabla de alertas
       const tb = $("#alertasTable");
@@ -497,6 +516,8 @@
         const estado = a.resuelta
           ? '<span class="badge bg-secondary">Resuelta</span>'
           : '<span class="badge bg-danger">Activa</span>';
+        // Boton para mandar esta alerta por correo (disponible para todas las alertas)
+        const correoBtn = '<button class="btn btn-sm btn-outline-primary" data-correo="' + a.id + '" title="Enviar por correo"><i class="bi bi-envelope"></i></button>';
         // Accion: si esta resuelta muestra la fecha; si no, un boton para resolverla
         const accion = a.resuelta
           ? '<span class="text-muted small">' + fmtFecha(a.fechaResolucion) + "</span>"
@@ -511,7 +532,7 @@
           "<td>" + (a.valor != null ? a.valor : "—") + "</td>" +
           "<td>" + fmtFecha(a.fecha) + "</td>" +
           "<td>" + estado + "</td>" +
-          "<td>" + accion + "</td>";
+          '<td class="text-nowrap">' + correoBtn + " " + accion + "</td>";
         // Agrega la fila a la tabla
         tb.appendChild(tr);
       });
@@ -536,16 +557,313 @@
           }
         });
       });
+
+      // Asigna a cada boton "Correo" el evento que abre el modal para enviarla por correo
+      $$("#alertasTable [data-correo]").forEach(btn => {
+        // Al hacer clic, busca la alerta por id y abre el modal de envio
+        btn.addEventListener("click", () => {
+          const a = alertasActuales.find(x => x.id === Number(btn.dataset.correo)); // Busca la alerta en el cache
+          if (a) abrirModalCorreo(a);                                               // Si la encuentra, abre el modal
+        });
+      });
     } catch (ex) {
       // Si algo falla, maneja el error de forma comun
       manejarError(ex);
     }
   }
 
+  // ============================================================
+  //  ENVIAR ALERTA POR CORREO (manual, a un destinatario elegido)
+  // ============================================================
+  // Instancia del modal de Bootstrap (se crea una vez y se reutiliza)
+  let correoModal = null;
+  // Alerta que se está por enviar (la elegida con el botón "Correo")
+  let alertaParaCorreo = null;
+  // Devuelve la instancia del modal de correo, creandola la primera vez
+  function getCorreoModal() {
+    if (!correoModal) correoModal = bootstrap.Modal.getOrCreateInstance($("#correoModal"));
+    return correoModal;
+  }
+
+  // Abre el modal para enviar una alerta por correo, mostrando una vista previa
+  function abrirModalCorreo(a) {
+    // Recuerda la alerta elegida
+    alertaParaCorreo = a;
+    // Oculta errores previos y limpia el campo del correo
+    $("#correoError").classList.add("d-none");
+    $("#correoDestino").value = "";
+    // Arma una vista previa de la alerta (severidad + mensaje + valor + fecha)
+    const sev = (a.severidad || "MEDIA").toUpperCase();
+    $("#correoPreview").innerHTML =
+      '<span class="badge sev-' + sev + '">' + sev + "</span> " + escapeHtml(a.mensaje || "") +
+      '<div class="text-muted mt-1">Valor: ' + (a.valor != null ? a.valor : "—") + " · " + fmtFecha(a.fecha) + "</div>";
+    // Muestra el modal
+    getCorreoModal().show();
+  }
+
+  // Maneja el envio del formulario del modal de correo
+  $("#correoForm").addEventListener("submit", async (e) => {
+    // Evita que el formulario recargue la pagina
+    e.preventDefault();
+    // Referencias al boton, su spinner y la caja de error
+    const btn = $("#correoEnviarBtn"), sp = $("#correoSpinner"), err = $("#correoError");
+    // Oculta errores anteriores
+    err.classList.add("d-none");
+    // Lee el correo destino
+    const destinatario = $("#correoDestino").value.trim();
+    // La alerta elegida
+    const a = alertaParaCorreo;
+    if (!a) return;
+    // Arma el objeto de la alerta con los nombres que espera el backend (AlertaMensaje)
+    const sensor = sensoresById[a.sensorId];
+    const alerta = {
+      sensorId: a.sensorId,                         // Sensor que origino la alerta
+      zona: sensor ? sensor.zona : "",              // Zona (se toma del sensor si esta en cache)
+      tipo: a.tipo,                                 // Tipo de medicion
+      severidad: a.severidad,                       // Severidad
+      mensaje: a.mensaje,                           // Texto de la alerta
+      valor: a.valor,                               // Valor detectado
+      fecha: a.fecha                                // Fecha de generacion
+    };
+    // Deshabilita el boton y muestra el spinner mientras envia
+    btn.disabled = true; sp.classList.remove("d-none");
+    try {
+      // Pide al backend enviar el correo al destinatario elegido
+      await Api.enviarAlertaCorreo(destinatario, alerta);
+      // Cierra el modal y avisa del exito
+      getCorreoModal().hide();
+      toast("Correo enviado a " + destinatario, "success");
+    } catch (ex) {
+      // Muestra el error dentro del modal (ej. correo invalido o fallo SMTP)
+      err.textContent = ex.message || "No se pudo enviar el correo.";
+      err.classList.remove("d-none");
+    } finally {
+      // Reactiva el boton y oculta el spinner
+      btn.disabled = false; sp.classList.add("d-none");
+    }
+  });
+
   // Al cambiar el filtro "Activas", recarga las alertas
   $("#filterActivas").addEventListener("change", cargarAlertas);
   // Al cambiar el filtro "Todas", recarga las alertas
   $("#filterTodas").addEventListener("change", cargarAlertas);
+
+  // ============================================================
+  //  CRUD DE SENSORES (crear / editar / eliminar)
+  // ============================================================
+  // Instancia del modal de Bootstrap (se crea una sola vez y se reutiliza)
+  let sensorModal = null;
+  // Devuelve la instancia del modal del sensor, creandola la primera vez
+  function getSensorModal() {
+    // Si aun no existe, la crea a partir del elemento del modal
+    if (!sensorModal) sensorModal = bootstrap.Modal.getOrCreateInstance($("#sensorModal"));
+    // Devuelve la instancia lista para usar
+    return sensorModal;
+  }
+
+  // Abre el modal del sensor. Con un sensor -> modo edicion; sin el -> modo "nuevo".
+  function abrirModalSensor(sensor) {
+    // Oculta cualquier error previo del formulario
+    $("#sensorFormError").classList.add("d-none");
+    // Hay edicion solo si llega un sensor con id
+    const editando = !!(sensor && sensor.id);
+    // Cambia el titulo del modal segun el caso
+    $("#sensorModalTitle").textContent = editando ? "Editar sensor" : "Nuevo sensor";
+    // Rellena los campos (vacios si es nuevo, con los datos del sensor si se edita)
+    $("#sId").value       = editando ? sensor.id : "";
+    $("#sNombre").value   = editando ? (sensor.nombre || "") : "";
+    $("#sTipo").value     = editando ? (sensor.tipo || "temperatura") : "temperatura";
+    $("#sUnidad").value   = editando ? (sensor.unidad || "") : "";
+    $("#sZona").value     = editando ? (sensor.zona || "") : "";
+    $("#sMin").value      = editando && sensor.minEsperado != null ? sensor.minEsperado : "";
+    $("#sMax").value      = editando && sensor.maxEsperado != null ? sensor.maxEsperado : "";
+    $("#sActivo").checked = editando ? sensor.activo !== false : true;
+    // Muestra el modal en pantalla
+    getSensorModal().show();
+  }
+
+  // El boton "Nuevo sensor" abre el modal vacio (modo creacion)
+  $("#btnNuevoSensor").addEventListener("click", () => abrirModalSensor(null));
+
+  // Convierte el texto de un campo numerico a numero, o null si viene vacio
+  function numOrNull(valor) {
+    // Vacio o nulo -> null (para no enviar 0 por accidente)
+    if (valor === "" || valor == null) return null;
+    // Convierte a numero
+    const n = Number(valor);
+    // Si no es un numero valido devuelve null; si lo es, el numero
+    return isNaN(n) ? null : n;
+  }
+
+  // Maneja el envio del formulario del sensor (crea o actualiza segun haya id)
+  $("#sensorForm").addEventListener("submit", async (e) => {
+    // Evita que el formulario recargue la pagina
+    e.preventDefault();
+    // Referencias al boton de guardar, su spinner y la caja de error del modal
+    const btn = $("#sensorGuardarBtn"), sp = $("#sensorGuardarSpinner"), err = $("#sensorFormError");
+    // Oculta errores anteriores
+    err.classList.add("d-none");
+    // Lee el id oculto (vacio = creando, con valor = editando)
+    const id = $("#sId").value;
+    // Arma el objeto del sensor con los nombres de campo que espera el backend (camelCase)
+    const datos = {
+      nombre: $("#sNombre").value.trim(),                 // Nombre del sensor
+      tipo: $("#sTipo").value,                            // Tipo (temperatura, humedad, ph)
+      zona: $("#sZona").value.trim(),                    // Zona del invernadero
+      unidad: $("#sUnidad").value.trim(),                // Unidad de medida
+      valorMinEsperado: numOrNull($("#sMin").value),     // Minimo esperado (o null)
+      valorMaxEsperado: numOrNull($("#sMax").value),     // Maximo esperado (o null)
+      activo: $("#sActivo").checked                       // Si el sensor esta activo
+    };
+    // Deshabilita el boton y muestra el spinner mientras guarda
+    btn.disabled = true; sp.classList.remove("d-none");
+    try {
+      // Si hay id actualiza el sensor; si no, crea uno nuevo
+      if (id) await Api.actualizarSensor(Number(id), datos);
+      else    await Api.crearSensor(datos);
+      // Cierra el modal
+      getSensorModal().hide();
+      // Avisa del resultado
+      toast(id ? "Sensor actualizado" : "Sensor creado", "success");
+      // Refresca la tabla de sensores (invalida la cache)
+      await recargarSensores();
+    } catch (ex) {
+      // Muestra el error dentro del modal (ej. validacion o sesion expirada)
+      err.textContent = ex.message || "No se pudo guardar el sensor.";
+      err.classList.remove("d-none");
+    } finally {
+      // Pase lo que pase, reactiva el boton y oculta el spinner
+      btn.disabled = false; sp.classList.add("d-none");
+    }
+  });
+
+  // Pide confirmacion y elimina un sensor
+  async function eliminarSensorUI(id, btn) {
+    // Busca el sensor para mostrar su nombre en el aviso de confirmacion
+    const s = sensoresById[id];
+    // Si el usuario cancela la confirmacion, no hace nada
+    if (!confirm('¿Eliminar el sensor "' + (s ? s.nombre : id) + '"? Esta acción no se puede deshacer.')) return;
+    // Deshabilita el boton para evitar doble clic
+    if (btn) btn.disabled = true;
+    try {
+      // Pide al backend eliminar el sensor
+      await Api.eliminarSensor(id);
+      // Avisa del exito
+      toast("Sensor eliminado", "success");
+      // Refresca la tabla
+      await recargarSensores();
+    } catch (ex) {
+      // Si falla (ej. el sensor ya tiene alertas asociadas), lo muestra y reactiva el boton
+      manejarError(ex);
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  // Vacia la cache de sensores y vuelve a dibujar la tabla (refleja altas, bajas y cambios)
+  async function recargarSensores() {
+    // Limpia la cache para forzar una nueva consulta al backend
+    sensoresCache = [];
+    sensoresById = {};
+    // Redibuja la tabla de sensores con los datos frescos
+    await cargarSensores();
+  }
+
+  // ============================================================
+  //  USUARIOS (alta de cuentas del sistema)
+  // ============================================================
+  // Maneja el envio del formulario de alta de usuario
+  $("#usuarioForm").addEventListener("submit", async (e) => {
+    // Evita que el formulario recargue la pagina
+    e.preventDefault();
+    // Referencias al boton, su spinner y las cajas de exito/error
+    const btn = $("#usuarioBtn"), sp = $("#usuarioSpinner");
+    const ok = $("#usuarioOk"), err = $("#usuarioError");
+    // Oculta avisos previos
+    ok.classList.add("d-none"); err.classList.add("d-none");
+    // Arma el objeto con los nombres que espera el backend (RegisterRequest)
+    const datos = {
+      username: $("#uUsername").value.trim(),       // Usuario para iniciar sesion
+      email: $("#uEmail").value.trim(),             // Correo del usuario
+      password: $("#uPassword").value,              // Contrasena (minimo 6)
+      nombreCompleto: $("#uNombre").value.trim(),   // Nombre completo (opcional)
+      rol: $("#uRol").value                          // Rol elegido (AGRICULTOR o ADMIN)
+    };
+    // Deshabilita el boton y muestra el spinner
+    btn.disabled = true; sp.classList.remove("d-none");
+    try {
+      // Pide al backend crear el usuario
+      await Api.registrarUsuario(datos);
+      // Muestra mensaje de exito
+      ok.textContent = 'Usuario "' + datos.username + '" creado. Ya puede iniciar sesión.';
+      ok.classList.remove("d-none");
+      // Vuelve a cargar la lista desde la base de datos (asi el usuario nuevo aparece y persiste)
+      cargarUsuarios();
+      // Limpia el formulario para crear otro
+      $("#usuarioForm").reset();
+    } catch (ex) {
+      // Muestra el error (por ejemplo, el username o email ya existe)
+      err.textContent = ex.message || "No se pudo crear el usuario.";
+      err.classList.remove("d-none");
+    } finally {
+      // Reactiva el boton y oculta el spinner
+      btn.disabled = false; sp.classList.add("d-none");
+    }
+  });
+
+  // Carga y dibuja la tabla de usuarios leyendolos de la base de datos (GET /usuarios, con JWT)
+  async function cargarUsuarios() {
+    // Referencia al cuerpo de la tabla
+    const tb = $("#usuariosTable");
+    // Muestra una rueda de carga mientras llegan los datos
+    tb.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4"><div class="spinner-border"></div></td></tr>';
+    try {
+      // Pide la lista de usuarios al backend
+      const usuarios = await Api.listarUsuarios();
+      // Limpia la tabla
+      tb.innerHTML = "";
+      // Si no hay usuarios, muestra un mensaje
+      if (!usuarios.length) {
+        tb.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No hay usuarios registrados.</td></tr>';
+        return;
+      }
+      // Crea una fila por cada usuario (escapando el texto por seguridad)
+      usuarios.forEach(u => {
+        // El usuario esta activo salvo que venga explicitamente en false
+        const activo = u.activo !== false;
+        // Etiqueta de estado segun si esta activo
+        const estado = activo
+          ? '<span class="badge bg-success">Activo</span>'
+          : '<span class="badge bg-secondary">Inactivo</span>';
+        // Crea la fila con los datos del usuario
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td>" + escapeHtml(u.username) + "</td>" +
+          "<td>" + escapeHtml(u.email) + "</td>" +
+          "<td>" + escapeHtml(u.nombreCompleto || "—") + "</td>" +
+          '<td><span class="badge bg-secondary">' + escapeHtml(u.rol) + "</span></td>" +
+          "<td>" + estado + "</td>";
+        // Agrega la fila a la tabla
+        tb.appendChild(tr);
+      });
+    } catch (ex) {
+      // Si falla (por ejemplo, sesion expirada), limpia la tabla y maneja el error
+      tb.innerHTML = "";
+      manejarError(ex);
+    }
+  }
+
+  // El boton de refrescar vuelve a cargar la lista de usuarios desde la BD
+  $("#btnRefrescarUsuarios").addEventListener("click", cargarUsuarios);
+
+  // Escapa caracteres especiales para que el texto del usuario no se interprete como HTML
+  function escapeHtml(str) {
+    // Sin texto -> cadena vacia
+    if (str == null) return "";
+    // Reemplaza los caracteres que el navegador trataria como HTML
+    return String(str)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
 
   // ============================================================
   //  Manejo de errores común
